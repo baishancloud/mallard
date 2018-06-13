@@ -13,3 +13,5 @@
 **/config.json
 
 apps/agent/agent
+apps/center/center
+apps/transfer/transfer
