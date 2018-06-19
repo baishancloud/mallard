@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
@@ -89,11 +90,20 @@ func PostJSON(url string, timeout time.Duration, value interface{}) (*http.Respo
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	return PostReader(url, timeout, bytes.NewReader(body), map[string]string{
+		"Content-Type": "application/json",
+	})
+}
+
+// PostReader posts body reader to url
+func PostReader(url string, timeout time.Duration, reader io.Reader, headers map[string]string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, reader)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 	if specialRole != "" {
 		req.Header.Set("Mallard-Role", specialRole)
 	}

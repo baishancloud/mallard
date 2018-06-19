@@ -25,7 +25,7 @@ var (
 )
 
 func prepare() {
-	osutil.Flags(version, BuildTime, nil)
+	osutil.Flags(version, BuildTime, cfg)
 	log.SetDebug(cfg.Debug)
 	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
 

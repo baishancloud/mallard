@@ -57,14 +57,17 @@ func defaultConfig() *config {
 				"config": "/api/config",
 				"self":   "/api/selfinfo",
 			},
+			URLs: []string{
+				"http://127.0.0.1:10999",
+			},
 		},
 		DisableJudge:  false,
-		PluginsDir:    "plugins",
-		PluginsLogDir: "",
+		PluginsDir:    "./plugins",
+		PluginsLogDir: "./plugins_logs",
 		PerfFile:      "./datalogs/mallard2_agent.log",
 		ReadLogDir:    "./datalogs",
-		WriteLogFile:  "./var/metrics.log",
-		SysPrefix:     "",
+		WriteLogFile:  "./var/metrics_%s.log",
+		SysPrefix:     "sys",
 	}
 }
 

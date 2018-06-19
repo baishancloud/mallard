@@ -82,3 +82,8 @@ func GetLivedHostInfos(lastTime int64) map[string][]interface{} {
 	}
 	return results
 }
+
+// GetAllHostInfos gets all cached hosts info
+func GetAllHostInfos() map[string][]interface{} {
+	return hostsInfos
+}
