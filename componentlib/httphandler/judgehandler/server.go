@@ -28,6 +28,8 @@ func Create() http.Handler {
 	r := httprouter.New()
 	r.POST("/api/metric", metricsRecv)
 	r.POST("/write", influxRecv)
+
+	r.GET("/api/events/memory", judgeEvents)
 	//r.GET("/api/query", s.metricQuery)
 
 	r.NotFound = http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {

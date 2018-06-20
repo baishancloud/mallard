@@ -14,6 +14,7 @@ apps=(
     'mallard2-eventor::eventor'
     'mallard2-alarm::alarm'
     'mallard2-store::store'    
+    'mallard2-judge::judge'
 )
 isbuild=0
 

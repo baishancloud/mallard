@@ -45,10 +45,10 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		queue <- metrics
 	}
 	rw.WriteHeader(204)
-	log.Debug("recv-ok",
-		"len", dataLen,
-		"gzip", r.Header.Get("Content-Length"),
-		"remote", r.RemoteAddr)
+	/*log.Debug("recv-ok",
+	"len", dataLen,
+	"gzip", r.Header.Get("Content-Length"),
+	"remote", r.RemoteAddr)*/
 }
 
 func influxRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -103,8 +103,8 @@ func influxRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	rw.WriteHeader(204)
 	dataLen := int64(len(mlist))
-	log.Debug("influx-ok",
-		"len", dataLen,
-		"remote", r.RemoteAddr)
 	influxRecvQPS.Incr(dataLen)
+	/*log.Debug("influx-ok",
+	"len", dataLen,
+	"remote", r.RemoteAddr)*/
 }

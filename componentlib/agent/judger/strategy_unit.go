@@ -47,10 +47,13 @@ func (s *StrategyUnit) SetStrategy(st *models.Strategy) error {
 	return nil
 }
 
-func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64) ([]*models.EventValue, bool) {
+func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, customHash string) ([]*models.EventValue, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	hash := metric.Hash()
+	hash := customHash
+	if hash == "" {
+		hash = metric.Hash()
+	}
 	queue := s.dataQueue[hash]
 	historyData := &models.EventValue{Value: rawLeftValue, Time: metric.Time}
 	if len(queue) > 0 {
@@ -69,7 +72,7 @@ func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64) ([]
 }
 
 // Check check metric value to bool result, if problem, return false
-func (s *StrategyUnit) Check(metric *models.Metric) (float64, models.EventStatus, error) {
+func (s *StrategyUnit) Check(metric *models.Metric, customHash string) (float64, models.EventStatus, error) {
 	if s.st == nil {
 		return 0, models.EventIgnore, nil
 	}
@@ -77,7 +80,7 @@ func (s *StrategyUnit) Check(metric *models.Metric) (float64, models.EventStatus
 	if err != nil {
 		return 0, models.EventIgnore, err
 	}
-	queue, ok := s.genQueue(metric, rawLeftValue)
+	queue, ok := s.genQueue(metric, rawLeftValue, customHash)
 	if !ok {
 		return 0, models.EventIgnore, nil
 	}
@@ -125,4 +128,28 @@ func (s *StrategyUnit) History(hash string) []*models.EventValue {
 // Operator return operator in the strategy unit
 func (s *StrategyUnit) Operator() Operator {
 	return s.op
+}
+
+var (
+	defaultUnitGroups = []string{"endpoint"}
+)
+
+// GroupBy returns unit custom group by string
+func (s *StrategyUnit) GroupBy() []string {
+	if s.st == nil {
+		return nil
+	}
+	ss := s.st.GroupBy()
+	if len(ss) == 0 {
+		return defaultUnitGroups
+	}
+	return ss
+}
+
+// Score gets score of the strategy in unit
+func (s *StrategyUnit) Score() float64 {
+	if s.st == nil {
+		return 0
+	}
+	return s.st.Score
 }

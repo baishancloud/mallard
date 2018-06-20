@@ -3,6 +3,7 @@ package judgestore
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -43,6 +44,7 @@ var (
 func SetDir(dir string) {
 	writingDir = dir
 	log.Info("set-dir", "dir", dir)
+	os.MkdirAll(dir, os.ModePerm)
 }
 
 // Close closes file manager, sync file handlers to disk and close
@@ -58,7 +60,7 @@ func Close() {
 }
 
 // Write writes values
-func Write(value interface{}) bool {
+func Write(value interface{}) {
 	/*if data, ok := value.([]byte); ok {
 		return f.WriteRaw(data)
 	}
@@ -66,32 +68,18 @@ func Write(value interface{}) bool {
 		return f.WriteRaw(data)
 	}*/
 	if data, ok := value.([]*models.Metric); ok {
-		return WriteMetrics(data)
+		WriteMetrics(data)
 	}
-	return false
 }
 
 func storeKey(ms *models.Metric) string {
 	return fmt.Sprintf("%s_%d", ms.Name, int(ms.Time/TimeRefactor*TimeRefactor))
 }
 
-// ProcessMetrics processes metrics queue
-func ProcessMetrics(queue <-chan []*models.Metric) {
-	for {
-		if atomic.LoadInt64(&writingStopFlag) > 0 {
-			return
-		}
-		metrics := <-queue
-		if len(metrics) > 0 {
-			WriteMetrics(metrics)
-		}
-	}
-}
-
 // WriteMetrics writes metrics to log files
-func WriteMetrics(metrics []*models.Metric) bool {
+func WriteMetrics(metrics []*models.Metric) {
 	if atomic.LoadInt64(&writingStopFlag) > 0 {
-		return false
+		return
 	}
 	valuesMap := ressembleMetrics(metrics)
 	for key, values := range valuesMap {
@@ -132,7 +120,7 @@ func WriteMetrics(metrics []*models.Metric) bool {
 		fh.Touch()
 		// f.Logger.Debug("write-ok", "file", fh.Name(), "len", len(values))
 	}
-	return true
+	return
 }
 
 var (

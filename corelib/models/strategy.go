@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -39,6 +40,9 @@ type Strategy struct {
 	MarkTagStr     string   `json:"-" db:"mark_tags"`
 	MarkTags       []string `json:"mark_tags,omitempty" db:"-"`
 	Status         int      `json:"-" db:"status"`
+	GroupByStr     string   `json:"-" db:"group_by"`
+	GroupBys       []string `json:"group_bys,omitempty" db:"-"`
+	Score          float64  `json:"score,omitempty" db:"score"`
 
 	tags     map[string]string
 	template *Template
@@ -71,6 +75,18 @@ func (s *Strategy) Marks() []string {
 		s.MarkTags = strings.Split(s.MarkTagStr, ",")
 	}
 	return s.MarkTags
+}
+
+// GroupBy return group by string slice
+func (s *Strategy) GroupBy() []string {
+	if len(s.GroupBys) == 0 {
+		if s.GroupByStr == "" {
+			return nil
+		}
+		s.GroupBys = strings.Split(s.GroupByStr, ",")
+		sort.Sort(sort.StringSlice(s.GroupBys))
+	}
+	return s.GroupBys
 }
 
 // IsInTime check t is in strategy running duration

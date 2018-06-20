@@ -29,7 +29,7 @@ func autoClose() {
 				continue
 			}
 			fn.Sync()
-			if now.Unix()%10 != 0 {
+			if now.Unix()%20 != 0 {
 				continue
 			}
 			duration := fn.IdleDuration()
@@ -47,7 +47,7 @@ func autoClose() {
 				count++
 			}
 		}
-		if now.Unix()%10 == 0 {
+		if now.Unix()%20 == 0 {
 			log.Info("fs-remove-ok", "count", count)
 		}
 		writingFilesLock.Unlock()
@@ -88,6 +88,7 @@ func autoClean() {
 		})
 		if err != nil {
 			log.Warn("clean-error", "error", err)
+			time.Sleep(time.Minute)
 			continue
 		}
 		log.Info("clean-ok", "file_mb", utils.FixFloat(float64(size)/1024/1024), "files", count)

@@ -136,7 +136,7 @@ func judgeOnce(metric *models.Metric) []*models.Event {
 		if !u.Accept(metric) {
 			continue
 		}
-		leftValue, status, err := u.Check(metric)
+		leftValue, status, err := u.Check(metric, "")
 		if _, ok := err.(FieldMissingError); ok {
 			log.Debug("strategy-field-miss", "sid", u.ID(), "msg", err)
 			continue
