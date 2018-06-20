@@ -16,6 +16,7 @@ var (
 	judgeFn []func([]*models.Metric)
 )
 
+// RegisterFn registers metrics handler
 func RegisterFn(fns ...func([]*models.Metric)) {
 	judgeFn = append(judgeFn, fns...)
 }
@@ -39,6 +40,7 @@ func Process(queue <-chan []*models.Metric) {
 	}
 }
 
+// Stop stops process functions
 func Stop() {
 	atomic.StoreInt64(&stopFlag, 1)
 	stopWg.Wait()

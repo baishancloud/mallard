@@ -47,6 +47,11 @@ func (s *StrategyUnit) SetStrategy(st *models.Strategy) error {
 	return nil
 }
 
+// GetStrategy gets strategy data in unit
+func (s *StrategyUnit) GetStrategy() *models.Strategy {
+	return s.st
+}
+
 func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, customHash string) ([]*models.EventValue, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()

@@ -1,6 +1,9 @@
 package multijudge
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"os"
 	"sync"
 	"time"
 
@@ -9,21 +12,18 @@ import (
 
 type (
 	eventItem struct {
-		Metric          *models.Metric `json:"metric,omitempty"`
-		MultiStrategyID int            `json:"multi_strategy_id,omitempty"`
-		GroupHash       string         `json:"group_hash,omitempty"`
-		MetricHash      string         `json:"metric_hash,omitempty"`
-		MetricValueHash string         `json:"-"`
-		LeftValue       float64        `json:"left_value,omitempty"`
-		Score           float64        `json:"score,omitempty"`
+		Metric          *models.Metric   `json:"metric,omitempty"`
+		MultiStrategyID int              `json:"multi_strategy_id,omitempty"`
+		GroupHash       string           `json:"group_hash,omitempty"`
+		MetricHash      string           `json:"metric_hash,omitempty"`
+		MetricValueHash string           `json:"-"`
+		LeftValue       float64          `json:"left_value,omitempty"`
+		Score           float64          `json:"score,omitempty"`
+		Strategy        *models.Strategy `json:"strategy,omitempty"`
 	}
 	eventItems struct {
-		Items map[string]*eventItem
+		Items map[string]*eventItem `json:"items,omitempty"`
 		lock  sync.RWMutex
-	}
-	eventGroup struct {
-		Groups map[string]*eventItems
-		lock   sync.RWMutex
 	}
 )
 
@@ -40,14 +40,26 @@ func (ei *eventItems) Remove(metricValueHash string) bool {
 	return true
 }
 
-func (ei *eventItems) Scan() {
+func (ei *eventItems) Scan() (map[string]float64, float64) {
 	scores := make(map[string]float64)
 	ei.lock.RLock()
 	for _, item := range ei.Items {
 		scores[item.MetricHash] = item.Score
 	}
 	ei.lock.RUnlock()
+	var total float64
+	for _, value := range scores {
+		total += value
+	}
+	return scores, total
 }
+
+type (
+	eventGroup struct {
+		Groups map[string]*eventItems `json:"groups,omitempty"`
+		lock   sync.RWMutex
+	}
+)
 
 func (eg *eventGroup) Add(item *eventItem) {
 	eg.lock.RLock()
@@ -69,17 +81,35 @@ func (eg *eventGroup) Remove(groupHash, metricValueHash string) bool {
 	items := eg.Groups[groupHash]
 	eg.lock.RUnlock()
 	if items != nil {
-		return items.Remove(metricValueHash)
+		if items.Remove(metricValueHash) {
+			if len(items.Items) == 0 {
+				eg.lock.Lock()
+				delete(eg.Groups, groupHash)
+				eg.lock.Unlock()
+			}
+			return true
+		}
 	}
 	return false
 }
 
-func (eg *eventGroup) Scan() {
+type scoreForItems struct {
+	Total  float64            `json:"total,omitempty"`
+	Scores map[string]float64 `json:"scores,omitempty"`
+}
+
+func (eg *eventGroup) Scan() map[string]scoreForItems {
 	eg.lock.RLock()
 	defer eg.lock.RUnlock()
-	for _, items := range eg.Groups {
-		items.Scan()
+	result := make(map[string]scoreForItems, len(eg.Groups))
+	for key, items := range eg.Groups {
+		scores, total := items.Scan()
+		result[key] = scoreForItems{
+			Total:  total,
+			Scores: scores,
+		}
 	}
+	return result
 }
 
 var (
@@ -114,16 +144,28 @@ func removeEventItem(mid int, groupHash, metricValueHash string) bool {
 
 func scanItems() {
 	cachedEventsLock.RLock()
-	defer cachedEventsLock.RUnlock()
 	var count int
-	for _, group := range cachedEvents {
-		group.Scan()
+	for muID, group := range cachedEvents {
+		unit := GetUnit(muID)
+		if unit == nil {
+			log.Warn("scan-nil-unit", "muid", muID)
+			continue
+		}
+		scoreResults := group.Scan()
+		for hash, result := range scoreResults {
+			ok := unit.CheckScore(result.Total)
+			log.Debug("check-score", "ok", ok, "hash", hash, "result", result)
+		}
 		count += len(group.Groups)
 	}
 	log.Info("scan-events", "groups", count)
+	dumpCachedEvents()
+	cachedEventsLock.RUnlock()
 }
 
+// ScanForEvents scans cached events to trigger combined-event
 func ScanForEvents(interval time.Duration) {
+	readCachedEvents()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
@@ -132,6 +174,7 @@ func ScanForEvents(interval time.Duration) {
 	}
 }
 
+// AllCachedEvents returns copy of cached events
 func AllCachedEvents() map[int]*eventGroup {
 	cp := make(map[int]*eventGroup)
 	cachedEventsLock.RLock()
@@ -140,4 +183,38 @@ func AllCachedEvents() map[int]*eventGroup {
 		cp[key] = group
 	}
 	return cp
+}
+
+var (
+	cachedEventsFile string
+)
+
+// SetCachedEventsFile sets file to dump cached events
+func SetCachedEventsFile(file string) {
+	cachedEventsFile = file
+	log.Info("set-dump-file", "file", file)
+}
+
+func dumpCachedEvents() {
+	if cachedEventsFile == "" {
+		return
+	}
+	b, _ := json.Marshal(cachedEvents)
+	ioutil.WriteFile(cachedEventsFile, b, os.ModePerm)
+}
+
+func readCachedEvents() {
+	if cachedEventsFile == "" {
+		return
+	}
+	b, err := ioutil.ReadFile(cachedEventsFile)
+	if err != nil {
+		log.Warn("read-dump-error", "error", err, "file", cachedEventsFile)
+		return
+	}
+	cachedEventsLock.Lock()
+	if err = json.Unmarshal(b, &cachedEvents); err != nil {
+		log.Warn("read-dump-decode-error", "error", err, "file", cachedEventsFile)
+	}
+	cachedEventsLock.Unlock()
 }

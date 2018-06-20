@@ -49,6 +49,7 @@ func main() {
 	judgehandler.SetQueue(queue)
 	go httputil.Listen(cfg.HTTPAddr, judgehandler.Create())
 
+	multijudge.SetCachedEventsFile("cache_events.dump")
 	multijudge.RegisterFn(judgestore.WriteMetrics, multijudge.Judge)
 	go multijudge.Process(queue)
 	go multijudge.ScanForEvents(time.Second * 10)

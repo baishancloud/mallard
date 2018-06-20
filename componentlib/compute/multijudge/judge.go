@@ -12,6 +12,7 @@ var (
 	unitsAccepts map[string][]int
 )
 
+// SetStrategies sets multi-strategies
 func SetStrategies(mstList map[int]*MultiStrategy) {
 	unitsLock.Lock()
 	accepts := make(map[string][]int)
@@ -30,6 +31,14 @@ func SetStrategies(mstList map[int]*MultiStrategy) {
 	unitsLock.Unlock()
 }
 
+// GetUnit gets unit by id
+func GetUnit(muID int) *MultiUnit {
+	unitsLock.RLock()
+	defer unitsLock.RUnlock()
+	return units[muID]
+}
+
+// JudgeSingle judges one metric
 func JudgeSingle(metric *models.Metric) {
 	unitsLock.RLock()
 	ids := unitsAccepts[metric.Name]
@@ -49,6 +58,7 @@ func JudgeSingle(metric *models.Metric) {
 	unitsLock.RUnlock()
 }
 
+// Judge judges some metrics
 func Judge(metrics []*models.Metric) {
 	for _, metric := range metrics {
 		JudgeSingle(metric)
