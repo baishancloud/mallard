@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 )
 
@@ -35,9 +36,12 @@ func (ei *eventItems) Add(item *eventItem) {
 
 func (ei *eventItems) Remove(metricValueHash string) bool {
 	ei.lock.Lock()
-	delete(ei.Items, metricValueHash)
+	_, ok := ei.Items[metricValueHash]
+	if ok {
+		delete(ei.Items, metricValueHash)
+	}
 	ei.lock.Unlock()
-	return true
+	return ok
 }
 
 func (ei *eventItems) Scan() (map[string]float64, float64) {
@@ -130,6 +134,7 @@ func setEventItem(item *eventItem) {
 		cachedEventsLock.Unlock()
 	}
 	group.Add(item)
+	judgeHitCount.Incr(1)
 }
 
 func removeEventItem(mid int, groupHash, metricValueHash string) bool {
@@ -137,9 +142,23 @@ func removeEventItem(mid int, groupHash, metricValueHash string) bool {
 	group := cachedEvents[mid]
 	cachedEventsLock.RUnlock()
 	if group != nil {
-		return group.Remove(groupHash, metricValueHash)
+		if group.Remove(groupHash, metricValueHash) {
+			judgeRemoveCount.Incr(1)
+			return true
+		}
 	}
 	return false
+}
+
+var (
+	judgeGroupCount      = expvar.NewBase("judge.scan_group")
+	judgeHitCount        = expvar.NewDiff("judge.hit")
+	judgeRemoveCount     = expvar.NewDiff("judge.remove")
+	judgeScoreAlarmCount = expvar.NewDiff("judge.score")
+)
+
+func init() {
+	expvar.Register(judgeGroupCount, judgeHitCount, judgeRemoveCount, judgeScoreAlarmCount)
 }
 
 func scanItems() {
@@ -155,10 +174,14 @@ func scanItems() {
 		for hash, result := range scoreResults {
 			ok := unit.CheckScore(result.Total)
 			log.Debug("check-score", "ok", ok, "hash", hash, "result", result)
+			if ok {
+				judgeScoreAlarmCount.Incr(1)
+			}
 		}
 		count += len(group.Groups)
 	}
 	log.Info("scan-events", "groups", count)
+	judgeGroupCount.Set(int64(count))
 	dumpCachedEvents()
 	cachedEventsLock.RUnlock()
 }

@@ -38,6 +38,16 @@ func (ec *EndpointConfig) Hash() string {
 	return ec.hashCode
 }
 
+// IsUsingStrategy checks the strategy id is using for this endpoint
+func (ec *EndpointConfig) IsUsingStrategy(id int) bool {
+	for _, st := range ec.Strategies {
+		if st.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
 // EndpointBuiltin is config for agent builtin service
 type EndpointBuiltin struct {
 	Ports []int64 `json:"ports,omitempty"`

@@ -24,12 +24,12 @@ var (
 	alarmHappenCount     = expvar.NewBase("rd.alarm_happening")
 	alarmHandleFailCount = expvar.NewDiff("rd.alarm_handle_fail")
 
-	recvOKCount   = expvar.NewDiff("rd.recv_ok")
-	recvNOCount   = expvar.NewDiff("rd.recv_no")
-	recvClosed    = expvar.NewDiff("rd.recv_closed")
-	recvOutdated  = expvar.NewDiff("rd.recv_outdated")
-	recvMaintains = expvar.NewDiff("rd.recv_maintains")
-	recvOuttime   = expvar.NewDiff("rd.recv_outtime")
+	recvOKCount      = expvar.NewDiff("rd.recv_ok")
+	recvProblemCount = expvar.NewDiff("rd.recv_problem")
+	recvClosed       = expvar.NewDiff("rd.recv_closed")
+	recvOutdated     = expvar.NewDiff("rd.recv_outdated")
+	recvMaintains    = expvar.NewDiff("rd.recv_maintains")
+	recvOuttime      = expvar.NewDiff("rd.recv_outtime")
 )
 
 func init() {
@@ -37,7 +37,7 @@ func init() {
 		alarmClosedCount, alarmOutdatedCount,
 		alarmNODATACount, alarmHappenCount,
 		alarmHandleFailCount,
-		recvOKCount, recvNOCount,
+		recvOKCount, recvProblemCount,
 		recvClosed, recvMaintains, recvOutdated, recvOuttime)
 }
 
@@ -59,6 +59,10 @@ func Receive(events []*models.Event) {
 	}
 
 	t := time.Now().Unix()
+	var (
+		okCount    int64
+		closeCount int64
+	)
 	for _, event := range events {
 		if event == nil {
 			continue
@@ -73,18 +77,17 @@ func Receive(events []*models.Event) {
 			Remove(event.ID)
 			log.Debug("recv-outdated", "eid", event.ID)
 		case models.EventClosed:
-			recvClosed.Incr(1)
+			closeCount++
 			operateCode = opIgore
 			if isInMemory(event.ID) {
 				operateCode = opAlarm
-				if err := Remove(event.ID); err != nil {
-					log.Warn("recv-closed-remove-error", "error", err, "eid", event.ID)
-				}
+				Remove(event.ID)
 				log.Info("recv-closed-alarm", "eid", event.ID)
-			} else {
-				log.Debug("recv-closed", "eid", event.ID)
 			}
 		default:
+			if event.Status == models.EventOk {
+				okCount++
+			}
 			operateCode, err = Check(event)
 			if err != nil {
 				log.Warn("check-event-error", "error", err, "status", event.Status.String(), "event", event)
@@ -97,6 +100,8 @@ func Receive(events []*models.Event) {
 			}
 		}
 	}
+	recvOKCount.Incr(okCount)
+	recvClosed.Incr(closeCount)
 }
 
 const (
@@ -147,7 +152,6 @@ func cacheNODATA(events []*models.Event) error {
 func Check(event *models.Event) (int, error) {
 	isInProblem := isInMemory(event.ID)
 	if event.Status == models.EventOk {
-		recvOKCount.Incr(1)
 		// if event is ok and in problem, reset alarm time
 		if isInProblem {
 			// remove problem message and set to alarm to cleanup event
@@ -160,11 +164,11 @@ func Check(event *models.Event) (int, error) {
 	}
 	// if event is problem,...
 	if event.Status == models.EventProblem {
-		recvNOCount.Incr(1)
+		recvProblemCount.Incr(1)
 		// if endpoint is in maintain,
 		// ignore any problem event from the endpoint
 		if redisdata.CheckEndpointMaintain(event.Endpoint) {
-			log.Debug("ignore-maintain", "status", event.Status.String(), "eid", event.ID)
+			log.Info("ignore-maintain", "status", event.Status.String(), "eid", event.ID)
 			recvMaintains.Incr(1)
 			return opIgore, nil
 		}

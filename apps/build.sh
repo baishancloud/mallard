@@ -40,7 +40,7 @@ EOF
         ver=$(./$KEY -v)
 
         cfgfile="$KEY""-config.json"
-        ./$KEY -c >> $cfgfile
+        ./$KEY -dc >> $cfgfile
 
         dir=$KEY
         if [ $KEY == "mallard2-agent" ]; then

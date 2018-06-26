@@ -10,11 +10,15 @@ import (
 
 // Flags is a simple flag interrupter to print value and load correct config file
 func Flags(version string, buildTime string, cfg interface{}) {
-	c := flag.Bool("c", false, "show default config")
+	c := flag.String("c", "", "")
+	dc := flag.Bool("dc", false, "show default config")
 	v := flag.Bool("v", false, "show version")
 	vt := flag.Bool("vt", false, "show version and built time")
 	flag.Parse()
-	if *c {
+	if *c != "" {
+		// ignore it
+	}
+	if *dc {
 		b, _ := json.MarshalIndent(cfg, "", "\t")
 		fmt.Println(string(b))
 		os.Exit(0)

@@ -39,26 +39,26 @@ func main() {
 
 	queueCli, err := initRedis(cfg.RedisAddr,
 		cfg.RedisPassword,
-		cfg.RedisQueueDb, time.Second*5)
+		cfg.RedisQueueDb, time.Second*10, 40)
 	if err != nil {
 		log.Fatal("init-redis-fail", "error", err)
 	}
 	cacheCli, err := initRedis(cfg.RedisAddr,
 		cfg.RedisPassword,
-		cfg.RedisCacheDb, time.Second*5)
+		cfg.RedisCacheDb, time.Second*10, 40)
 	if err != nil {
 		log.Fatal("init-redis-fail", "error", err)
 	}
 
 	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetIntervals([]string{"strategies"})
-	go configapi.Intervals(time.Second * 30)
+	configapi.SetIntervals([]string{"strategies", "endpoints"})
+	go configapi.Intervals(time.Minute)
 
 	redisdata.SetClient(queueCli, cacheCli)
 	redisdata.SetAlarmLayout(cfg.RedisQueueLayout)
 
 	eventdata.InitMemory()
-	go eventdata.ScanOutdated(time.Minute)
+	go eventdata.ScanOutdated(time.Minute * 2)
 	go eventdata.ScanNodata(time.Minute * 2)
 	go eventdata.StartGC(time.Minute)
 
@@ -81,7 +81,7 @@ func main() {
 	log.Sync()
 }
 
-func initRedis(address, pwd string, db int, timeout time.Duration) (*redis.Client, error) {
+func initRedis(address, pwd string, db int, timeout time.Duration, poolSize int) (*redis.Client, error) {
 	cli := redis.NewClient(&redis.Options{
 		Addr:         address,
 		Password:     pwd,
@@ -89,6 +89,7 @@ func initRedis(address, pwd string, db int, timeout time.Duration) (*redis.Clien
 		DialTimeout:  timeout,
 		WriteTimeout: timeout,
 		ReadTimeout:  timeout,
+		PoolSize:     poolSize,
 	})
 	return cli, cli.Ping().Err()
 }
