@@ -1,28 +1,28 @@
 package main
 
 type config struct {
-	CenterAddr string `json:"center_addr,omitempty"`
-	RedisAddr  string `json:"redis_addr,omitempty"`
-	DbDSN      string `json:"db_dsn,omitempty"`
+	CenterAddr string `json:"center_addr"`
+	RedisAddr  string `json:"redis_addr"`
+	DbDSN      string `json:"db_dsn"`
 
-	EtcdAddr     []string `json:"etcd_addr,omitempty"`
-	EtcdUser     string   `json:"etcd_user,omitempty"`
-	EtcdPassword string   `json:"etcd_password,omitempty"`
+	EtcdAddr     []string `json:"etcd_addr"`
+	EtcdUser     string   `json:"etcd_user"`
+	EtcdPassword string   `json:"etcd_password"`
 
-	HighQueues []string `json:"high_queues,omitempty"`
-	LowQueues  []string `json:"low_queues,omitempty"`
+	HighQueues []string `json:"high_queues"`
+	LowQueues  []string `json:"low_queues"`
 
-	AlarmsDumpFile    string `json:"alarms_dump_file,omitempty"`
-	AlarmSubscribeKey string `json:"alarm_subscribe_key,omitempty"`
+	AlarmsDumpFile    string `json:"alarms_dump_file"`
+	AlarmSubscribeKey string `json:"alarm_subscribe_key"`
 
-	CommandFile string `json:"command_file,omitempty"`
-	ActionFile  string `json:"action_file,omitempty"`
-	MsggFile    string `json:"msgg_file,omitempty"`
+	CommandFile string `json:"command_file"`
+	ActionFile  string `json:"action_file"`
+	MsggFile    string `json:"msgg_file"`
 
-	PerfFile string `json:"perf_file,omitempty"`
-	Debug    bool   `json:"debug,omitempty"`
+	PerfFile string `json:"perf_file"`
+	Debug    bool   `json:"debug"`
 
-	StatMetricFile string `json:"stat_metric_file,omitempty"`
+	StatMetricFile string `json:"stat_metric_file"`
 }
 
 func defaultConfig() config {

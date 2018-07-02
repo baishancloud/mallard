@@ -28,15 +28,18 @@ var (
 	problemIDs  = make(map[string][]eventDbID)
 	problemLock sync.RWMutex
 
-	alertInsertCount   = expvar.NewDiff("alertdb.insert")
-	alertEndEventCount = expvar.NewDiff("alertdb.end_event")
-	alertRecvCount     = expvar.NewDiff("alertdb.recv")
-	alertDbErrorCount  = expvar.NewDiff("alertdb.db_fail")
-	alertProblemsCount = expvar.NewBase("alertdb.problems")
+	alertInsertCount     = expvar.NewDiff("alertdb.insert")
+	alertInsertFailCount = expvar.NewDiff("alertdb.insert_fail")
+	alertEndEventCount   = expvar.NewDiff("alertdb.end_event")
+	alertRecvCount       = expvar.NewDiff("alertdb.recv")
+	alertDbErrorCount    = expvar.NewDiff("alertdb.db_fail")
+	alertProblemsCount   = expvar.NewBase("alertdb.problems")
 )
 
 func init() {
-	expvar.Register(alertInsertCount, alertRecvCount, alertEndEventCount, alertDbErrorCount, alertProblemsCount)
+	expvar.Register(alertInsertCount, alertRecvCount,
+		alertEndEventCount, alertDbErrorCount,
+		alertProblemsCount, alertInsertFailCount)
 }
 
 type eventDbID struct {
@@ -81,13 +84,16 @@ var (
 
 // InsertEvent inserts new event
 func InsertEvent(event *models.EventFull) {
+	alertInsertCount.Incr(1)
 	if err := models.FillEventStrategy(event); err != nil {
 		log.Warn("fill-strategy-error", "error", err, "event", event)
+		alertInsertFailCount.Incr(1)
 		return
 	}
 	st, ok := event.Strategy.(*models.Strategy)
 	if !ok {
 		log.Warn("fill-strategy-not-ok", "event", event)
+		alertInsertFailCount.Incr(1)
 		return
 	}
 
@@ -97,7 +103,7 @@ func InsertEvent(event *models.EventFull) {
 	stmt, err := tryPrepare(sql, time.Unix(event.EventTime, 0))
 	if err != nil {
 		log.Warn("prepare-error", "error", err, "event", event)
-		alertDbErrorCount.Incr(1)
+		alertInsertFailCount.Incr(1)
 		return
 	}
 	defer stmt.Close()
@@ -124,7 +130,7 @@ func InsertEvent(event *models.EventFull) {
 	)
 	if err != nil {
 		log.Warn("insert-error", "error", err, "event", event)
-		alertDbErrorCount.Incr(1)
+		alertInsertFailCount.Incr(1)
 		return
 	}
 	var insertID int64
@@ -150,7 +156,6 @@ func InsertEvent(event *models.EventFull) {
 		}
 	}
 	log.Debug("insert-ok", "status", event.Status, "eid", event.ID, "insert_id", insertID)
-	alertInsertCount.Incr(1)
 }
 
 var (
@@ -175,6 +180,7 @@ func updateEventDuration(event *models.EventFull, eventID int64, isPrev bool) {
 			return
 		}
 		log.Warn("read-old-error", "error", err, "event", event.ID)
+		alertDbErrorCount.Incr(1)
 		return
 	}
 	duration := event.EventTime - t
@@ -216,6 +222,7 @@ var (
 )
 
 func endEvent(eid string, flag int) {
+	alertEndEventCount.Incr(1)
 	problemLock.RLock()
 	pids := problemIDs[eid]
 	delete(problemIDs, eid)
@@ -231,7 +238,6 @@ func endEvent(eid string, flag int) {
 			return
 		}
 		log.Debug("update-outdated", "eid", eid, "pid", eIDObj.ID, "table", eIDObj.Table, "flag", flag)
-		alertEndEventCount.Incr(1)
 	}
 }
 

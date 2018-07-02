@@ -3,6 +3,7 @@ package msggcall
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -25,8 +26,20 @@ var (
 // SetFiles sets files
 func SetFiles(cmd, action, msgg string) {
 	commandFile = cmd
+	if _, err := os.Stat(commandFile); err != nil {
+		log.Warn("stat-cmd-file-error", "error", err)
+		commandFile = ""
+	}
 	actionFile = action
+	if _, err := os.Stat(actionFile); err != nil {
+		log.Warn("stat-action-file-error", "error", err)
+		actionFile = ""
+	}
 	msggFile = msgg
+	if _, err := os.Stat(msggFile); err != nil {
+		log.Warn("stat-msgg-file-error", "error", err)
+		msggFile = ""
+	}
 }
 
 var (

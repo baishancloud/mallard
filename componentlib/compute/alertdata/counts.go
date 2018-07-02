@@ -77,6 +77,7 @@ func ScanStat(interval time.Duration, timeDiff int64, metricFile string) {
 		events, err := GetStatEvents(time.Now().Unix() - timeDiff)
 		if err != nil {
 			log.Warn("get-stats-error", "error", err)
+			alertDbErrorCount.Incr(1)
 			continue
 		}
 		olds := readAlarmStatDump(statDumpFile)
