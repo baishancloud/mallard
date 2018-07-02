@@ -12,10 +12,11 @@ type config struct {
 
 func defaultConfig() config {
 	return config{
-		Debug:      true,
-		CenterAddr: "http://127.0.0.1:10999",
-		HTTPAddr:   "0.0.0.0:10899",
-		TokenFile:  "tokens.json",
-		IsPublic:   false,
+		Debug:       true,
+		CenterAddr:  "http://127.0.0.1:10999",
+		EventorAddr: nil,
+		HTTPAddr:    "0.0.0.0:10899",
+		TokenFile:   "tokens.json",
+		IsPublic:    false,
 	}
 }
