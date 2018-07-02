@@ -120,7 +120,7 @@ func (n *Node) Send(data []byte, pLen int64, retry bool) {
 		return
 	}
 	duration := time.Since(st).Nanoseconds() / 1e6
-	log.Debug("send-ok", "g", n.Name, "len", pLen, "status", resp.StatusCode, "du", duration)
+	// log.Debug("send-ok", "g", n.Name, "len", pLen, "status", resp.StatusCode, "du", duration)
 	n.latencyCounter.Set(duration)
 	n.sendCounter.Incr(pLen)
 	n.sizeCounter.Set(int64(len(data)))
