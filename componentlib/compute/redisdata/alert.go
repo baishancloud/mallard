@@ -86,6 +86,11 @@ func SaveEventFromStrategy(event *models.EventFull, st *models.Strategy) {
 		redisFailCount.Incr(1)
 	}
 	log.Info("zadd-ok", "eid", dto.ID, "key", key)
+	if err := RefreshAlarmingEvent(event, dto.Note); err != nil {
+		log.Warn("set-note-error", "error", "eid", event.ID)
+	} else {
+		log.Debug("set-note", "eid", event.ID, "note", dto.Note)
+	}
 }
 
 func redisOperateEvent(event *models.EventFull, st *models.Strategy) {
@@ -115,7 +120,13 @@ func RemoveEvent(eid string) {
 		}
 	}
 	queueCli.Del(eid)
-	log.Debug("del", "eid", eid)
+	log.Info("del", "eid", eid)
+	// clean infos
+	if err := cleanAlarmingEvent(eid); err != nil {
+		log.Warn("rm-note-fail", "eid", eid, "error", err)
+	} else {
+		log.Debug("rm-note", "eid", eid)
+	}
 }
 
 func forceClean(eid string) {
@@ -123,7 +134,7 @@ func forceClean(eid string) {
 	for _, queue := range alarmHighQueue {
 		affect, _ := queueCli.ZRem(queue, eid).Result()
 		if affect > 0 {
-			log.Debug("rm-zset", "eid", eid, "zrem", queue)
+			log.Debug("rm-zset-force", "eid", eid, "zrem", queue)
 			isForceClean = true
 		}
 	}
@@ -131,14 +142,30 @@ func forceClean(eid string) {
 		for _, queue := range alarmLowQueue {
 			affect, _ := queueCli.ZRem(queue, eid).Result()
 			if affect > 0 {
-				log.Debug("rm-zset", "eid", eid, "zrem", queue)
+				log.Debug("rm-zset-force", "eid", eid, "zrem", queue)
 				isForceClean = true
 			}
 		}
 	}
 	if !isForceClean {
-		log.Warn("rm-zset-fail", "eid", eid)
+		log.Warn("rm-zset-force-fail", "eid", eid)
 	}
+}
+
+func cleanAlarmingEvent(eid string) error {
+	if queueCli == nil {
+		return ErrQueueNil
+	}
+	ikey := fmt.Sprintf("fitem_%s", eid)
+	leftKey := fmt.Sprintf("leftvalue_%s", eid)
+	nkey := fmt.Sprintf("note_%s", eid)
+	pipe := queueCli.Pipeline()
+	defer pipe.Close()
+	pipe.Del(nkey)
+	pipe.Del(ikey)
+	pipe.Del(leftKey)
+	_, err := pipe.Exec()
+	return err
 }
 
 // HasNoAlarmFlag checks event no-alarm flag
