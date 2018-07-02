@@ -321,6 +321,7 @@ var (
 	ErrRangeXORFail = errors.New("rangexor-fail")
 )
 
+// RangeXOR is operator for rangeand() and rangeor()
 type RangeXOR struct {
 	base        *StrategyBase
 	compareFn   CompareFunc
@@ -330,6 +331,8 @@ type RangeXOR struct {
 	isOR        bool
 }
 
+// NewRangeXORFromStrategy creates new rangexor operator,
+// if set isOR, match rangeor()
 func NewRangeXORFromStrategy(st *models.Strategy, isOR bool) (*RangeXOR, error) {
 	var (
 		s = RangeXOR{
