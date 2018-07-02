@@ -265,6 +265,43 @@ func TestOperator(t *testing.T) {
 			So(err, ShouldBeNil)
 			testOperator(op3, accepts{3, false, 1, -1})
 		})
+		Convey("operator.rangexor", func() {
+			op, err := FromStrategy(&models.Strategy{
+				FieldTransform: "rangeand(x,100,200,y,1,9,value)",
+				Func:           "all(#3)",
+				Operator:       "==",
+				RightValue:     9,
+			})
+			So(err, ShouldBeNil)
+			testOperator(op, accepts{3, false, 1, 9})
+
+			op, err = FromStrategy(&models.Strategy{
+				FieldTransform: "rangeor(x,1,2,y,1,9,value)",
+				Func:           "all(#3)",
+				Operator:       "==",
+				RightValue:     9,
+			})
+			So(err, ShouldBeNil)
+			testOperator(op, accepts{3, false, 1, 9})
+
+			op, err = FromStrategy(&models.Strategy{
+				FieldTransform: "rangeand(x,1,2,y,1,9,value)",
+				Func:           "all(#3)",
+				Operator:       "==",
+				RightValue:     9,
+			})
+			So(err, ShouldBeNil)
+			testOperator(op, accepts{3, false, 1, 0})
+
+			op, err = FromStrategy(&models.Strategy{
+				FieldTransform: "rangeand(value,1,10,y,1,9,value)",
+				Func:           "all(#3)",
+				Operator:       "==",
+				RightValue:     9,
+			})
+			So(err, ShouldBeNil)
+			testOperator(op, accepts{3, false, 1, 9})
+		})
 	})
 }
 
@@ -272,7 +309,11 @@ func testOperator(op Operator, acceptData accepts) {
 	limit := op.Limit()
 	So(limit, ShouldEqual, acceptData.Limit)
 	fieldValue, err := op.Transform(testMetric)
-	So(err, ShouldBeNil)
+	if err == ErrRangeXORFail {
+		So(err, ShouldEqual, ErrRangeXORFail)
+	} else {
+		So(err, ShouldBeNil)
+	}
 	So(fieldValue, ShouldEqual, acceptData.FieldValue)
 	data := testHistoryData[:limit]
 	leftValue, ok, err := op.Trigger(data)

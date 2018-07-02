@@ -19,6 +19,11 @@ type Operator interface {
 	Base() *StrategyBase
 }
 
+var (
+	// ErrUnknownTransform is error of unknown transform function
+	ErrUnknownTransform = errors.New("unknown-transform")
+)
+
 // FromStrategy return operator with strategy
 func FromStrategy(s *models.Strategy) (Operator, error) {
 	if strings.HasPrefix(s.FieldTransform, "select(") {
@@ -27,7 +32,13 @@ func FromStrategy(s *models.Strategy) (Operator, error) {
 	if strings.HasPrefix(s.FieldTransform, "rangeselect(") {
 		return NewRangeSelectFromStrategy(s)
 	}
-	return nil, errors.New("unknown transform")
+	if strings.HasPrefix(s.FieldTransform, "rangeand(") {
+		return NewRangeXORFromStrategy(s, false)
+	}
+	if strings.HasPrefix(s.FieldTransform, "rangeor(") {
+		return NewRangeXORFromStrategy(s, true)
+	}
+	return nil, ErrUnknownTransform
 }
 
 var (
@@ -186,6 +197,9 @@ func (s *Select) Base() *StrategyBase {
 	return s.base
 }
 
+// ErrRangeSelectInvalidArguments is error of range select arguments
+var ErrRangeSelectInvalidArguments = errors.New("rangeselect-args-error")
+
 var rangeSelectReplacer = strings.NewReplacer("(", "|", ")", "", ",", "|")
 
 // RangeInfo is params for range select
@@ -225,7 +239,7 @@ func NewRangeSelectFromStrategy(st *models.Strategy) (*RangeSelect, error) {
 	}
 	fieldS := strings.Split(rangeSelectReplacer.Replace(st.FieldTransform), "|")
 	if len(fieldS) != 6 {
-		return nil, errors.New("rangeselect(args) count wrong")
+		return nil, ErrRangeSelectInvalidArguments
 	}
 	s.base.Field = strings.TrimSpace(fieldS[1])
 	if s.rangeInfo.MinValue, err = strconv.ParseFloat(fieldS[2], 64); err != nil {
@@ -298,4 +312,143 @@ func (s *RangeSelect) Base() *StrategyBase {
 // RangeInfo return rangeselect params
 func (s *RangeSelect) RangeInfo() RangeInfo {
 	return s.rangeInfo
+}
+
+var (
+	// ErrRangeXORInvalidArguments is error of range xor arguments
+	ErrRangeXORInvalidArguments = errors.New("rangexor-args-error")
+	// ErrRangeXORFail is error of range info check fail
+	ErrRangeXORFail = errors.New("rangexor-fail")
+)
+
+type RangeXOR struct {
+	base        *StrategyBase
+	compareFn   CompareFunc
+	calculateFn CalculateFunc
+	checkField  string
+	ranges      []*RangeInfo
+	isOR        bool
+}
+
+func NewRangeXORFromStrategy(st *models.Strategy, isOR bool) (*RangeXOR, error) {
+	var (
+		s = RangeXOR{
+			isOR: isOR,
+		}
+		err error
+	)
+	s.base, err = NewStrategyBase(st)
+	if err != nil {
+		return nil, err
+	}
+	s.calculateFn = NewCalculateFunc(s.base.CalType)
+	if s.calculateFn == nil {
+		return nil, err
+	}
+	s.compareFn = NewCompareFunc(st.Operator)
+	if s.compareFn == nil {
+		return nil, err
+	}
+	fieldS := strings.Split(rangeSelectReplacer.Replace(st.FieldTransform), "|")
+	if (len(fieldS)-2)%3 != 0 {
+		return nil, ErrRangeXORInvalidArguments
+	}
+	s.base.Field = strings.TrimSpace(fieldS[len(fieldS)-1])
+	ranges := make([]*RangeInfo, (len(fieldS)-2)/3)
+	for i := 1; i <= len(fieldS)-2; i++ {
+		idx := (i - 1) / 3
+		mod := (i - 1) % 3
+		if mod == 0 {
+			ranges[idx] = &RangeInfo{}
+			ranges[idx].RangeField = strings.TrimSpace(fieldS[i])
+			continue
+		}
+		if mod == 1 {
+			if ranges[idx].MinValue, err = strconv.ParseFloat(fieldS[i], 64); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		if mod == 2 {
+			if ranges[idx].MaxValue, err = strconv.ParseFloat(fieldS[i], 64); err != nil {
+				return nil, err
+			}
+			continue
+		}
+	}
+	s.ranges = ranges
+	return &s, nil
+}
+
+// Limit return data queue size limit
+func (s *RangeXOR) Limit() int {
+	return s.base.Limit
+}
+
+// Trigger run strategy rule with history data list
+func (s *RangeXOR) Trigger(historyList []*models.EventValue) (float64, bool, error) {
+	return s.calculateFn(historyList, s.base.RightValue, s.compareFn, s.base.Args...)
+}
+
+// Tags return strategy tags condition
+func (s *RangeXOR) Tags() map[string]TagFilterFunc {
+	if s.base == nil {
+		return nil
+	}
+	return s.base.Tags
+}
+
+// Base return strategy base info
+func (s *RangeXOR) Base() *StrategyBase {
+	return s.base
+}
+
+// RangeInfo return rangeselect params
+func (s *RangeXOR) RangeInfo() []*RangeInfo {
+	return s.ranges
+}
+
+// Transform return left value from metric with this operator
+// get field value by field,
+// if value >= min && value <= max, return range field value
+func (s *RangeXOR) Transform(metric *models.Metric) (float64, error) {
+	fieldv, ok := metric.Fields[s.base.Field]
+	if !ok {
+		if s.base.Field == "value" {
+			fieldv = metric.Value
+		} else {
+			return 0, fmt.Errorf("field '%s' is not found", s.base.Field)
+		}
+	}
+	fieldFloat, err := utils.ToFloat64(fieldv)
+	if err != nil {
+		return 0, err
+	}
+	var isRanged int
+	for _, rg := range s.ranges {
+		fieldv2, ok := metric.Fields[rg.RangeField]
+		if !ok {
+			if rg.RangeField == "value" {
+				fieldv2 = metric.Value
+			} else {
+				if !s.isOR {
+					return 0, fmt.Errorf("field '%s' is not found", rg.RangeField)
+				}
+			}
+		}
+		v2, err := utils.ToFloat64(fieldv2)
+		if err != nil && s.isOR {
+			return 0, err
+		}
+		if v2 >= rg.MinValue && v2 <= rg.MaxValue {
+			isRanged++
+			if s.isOR && isRanged > 0 {
+				return fieldFloat, nil
+			}
+		}
+	}
+	if isRanged != len(s.ranges) {
+		return 0, ErrRangeXORFail
+	}
+	return fieldFloat, nil
 }

@@ -83,6 +83,9 @@ func (s *StrategyUnit) Check(metric *models.Metric, customHash string) (float64,
 	}
 	rawLeftValue, err := s.op.Transform(metric)
 	if err != nil {
+		if err == ErrRangeXORFail {
+			return 0, models.EventIgnore, nil
+		}
 		return 0, models.EventIgnore, err
 	}
 	queue, ok := s.genQueue(metric, rawLeftValue, customHash)

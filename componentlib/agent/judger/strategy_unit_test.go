@@ -26,7 +26,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     1,
 				Value:    2,
 				Endpoint: "localhost",
-			})
+			}, "")
 			So(err, ShouldBeNil)
 			So(leftValue, ShouldEqual, 0)
 			So(status, ShouldEqual, models.EventIgnore)
@@ -36,7 +36,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     2,
 				Value:    2,
 				Endpoint: "localhost",
-			})
+			}, "")
 			So(err, ShouldBeNil)
 			So(leftValue, ShouldEqual, 2)
 			So(status, ShouldEqual, models.EventProblem)
@@ -46,7 +46,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     3,
 				Value:    -1,
 				Endpoint: "localhost",
-			})
+			}, "")
 			So(err, ShouldBeNil)
 			So(leftValue, ShouldEqual, -1)
 			So(status, ShouldEqual, models.EventOk)
@@ -107,7 +107,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     4,
 				Value:    2,
 				Endpoint: "localhost",
-			})
+			}, "")
 			So(err, ShouldNotBeNil)
 			So(err, ShouldHaveSameTypeAs, FieldMissingError{})
 			So(leftValue, ShouldEqual, 0)
