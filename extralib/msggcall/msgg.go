@@ -148,14 +148,21 @@ func AddRequests(event *models.EventFull, st *models.Strategy, isRecover bool) {
 			Uic:      "000",
 			Template: "000",
 		}
-		action := configapi.AlarmActionForStrategy(st.ID)
+		forSt := configapi.AlarmForStrategy(st.ID)
+		if forSt == nil {
+			log.Warn("no-forSt", "eid", event.ID)
+		} else {
+			defaultReq.Uic = forSt.ActionUic
+			defaultReq.Template = forSt.TemplateName
+		}
+		/*action := configapi.AlarmActionForStrategy(st.ID)
 		if action != nil {
 			defaultReq.Uic = action.Uic
 			tpl := configapi.AlarmTemplateForAction(action.ID)
 			if tpl != nil {
 				defaultReq.Template = tpl.Name
 			}
-		}
+		}*/
 		stReqs["fill-default"] = defaultReq
 	}
 	reqs := make(map[int64]*msggRequest, len(stReqs))

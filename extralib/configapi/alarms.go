@@ -103,3 +103,14 @@ func AlarmRequestByStrategy(sid int) map[string]*sqldata.AlarmSendRequest {
 	defer cacheAlarmsLock.RUnlock()
 	return cacheAlarmRequests[sid]
 }
+
+// AlarmForStrategy gets one alarm data for one strategy,
+// contains uic, template and alarm users status
+func AlarmForStrategy(sid int) *sqldata.AlarmsForStrategy {
+	cacheAlarmsLock.RLock()
+	defer cacheAlarmsLock.RUnlock()
+	if cacheAlarms != nil {
+		return cacheAlarms.ForStrategies[sid]
+	}
+	return nil
+}
