@@ -19,7 +19,7 @@ var (
 
 	eventCurrent = NewCurrent()
 
-	strategyCount     = expvar.NewBase("events.strategy")
+	strategyCount     = expvar.NewBase("event.strategy")
 	eventOKCount      = expvar.NewDiff("events.ok")
 	eventProblemCount = expvar.NewDiff("events.problem")
 )

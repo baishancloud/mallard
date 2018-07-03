@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+  golang:
+    image: golang
+    volumes:
+      - "/Users/fuxiaohei/Projects/golang/:/home"
+    environment:
+      - GOPATH=/home/GOPATH:/home/fuxiaohei:/home/baishancloud
+    network_mode: host

@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	tfrClient = NewClient(time.Second*10, 10, "mallard2-agent")
+	tfrClient = NewClient(time.Second*10, 5, "mallard2-agent")
 )
 
 // SetClientHash sets client hash token
 func SetClientHash(hash string) {
-	tfrClient = NewClient(time.Second*10, 10, hash)
+	tfrClient = NewClient(time.Second*10, 5, hash)
 }
 
 // Client is simple client to send data to url
@@ -46,7 +46,7 @@ func NewClient(timeout time.Duration, maxConn int, token string) *Client {
 		MaxIdleConns:          maxConn,
 		MaxIdleConnsPerHost:   2,
 		ResponseHeaderTimeout: timeout,
-		IdleConnTimeout:       time.Minute,
+		IdleConnTimeout:       time.Second * 30,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},

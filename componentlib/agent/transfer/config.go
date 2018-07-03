@@ -18,9 +18,9 @@ import (
 var (
 	cacheEpData = new(models.EndpointData)
 
-	configReqCount    = expvar.NewDiff("transfer.config_req")
-	configFailCount   = expvar.NewDiff("transfer.config_fail")
-	configChangeCount = expvar.NewDiff("transfer.config_change")
+	configReqCount    = expvar.NewDiff("poster.config_req")
+	configFailCount   = expvar.NewDiff("poster.config_fail")
+	configChangeCount = expvar.NewDiff("poster.config_change")
 )
 
 func init() {

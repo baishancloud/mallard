@@ -11,9 +11,9 @@ var (
 	// MaxMetricsInOnce is max length of metrics in one requests
 	MaxMetricsInOnce = 1000
 
-	metricSendCount    = expvar.NewDiff("transfer.metrics")
-	metricFailCount    = expvar.NewDiff("transfer.metrics_fail")
-	metricLatencyCount = expvar.NewAverage("transfer.metrics_latency", 10)
+	metricSendCount    = expvar.NewDiff("poster.metric")
+	metricFailCount    = expvar.NewDiff("poster.metric_fail")
+	metricLatencyCount = expvar.NewAverage("poster.metric_latency", 10)
 )
 
 func init() {
@@ -60,10 +60,9 @@ func Metrics(metrics []*models.Metric) {
 		}
 		resp.Body.Close()
 		ds := du.Nanoseconds() / 1e6
-		ds2 := ds*100/int64(len(metrics)) + 1
-		urlLatency.Set(idx, ds2)
-		log.Info("metrics-send-ok", "url", url, "len", dataLen, "ms", ds, "ds", ds2)
-		metricLatencyCount.Set(ds2)
+		log.Info("metrics-send-ok", "url", url, "len", dataLen, "ms", ds)
+		metricLatencyCount.Set(ds)
+		urlLatency.Set(idx, ds)
 		isSend = true
 		break
 	}

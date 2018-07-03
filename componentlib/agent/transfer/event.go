@@ -11,9 +11,9 @@ var (
 	// MaxEventsInOnce is max length of events in one requests
 	MaxEventsInOnce = 1000
 
-	eventSendCount    = expvar.NewDiff("transfer.events")
-	eventFailCount    = expvar.NewDiff("transfer.events_fail")
-	eventLatencyCount = expvar.NewAverage("transfer.events_latency", 10)
+	eventSendCount    = expvar.NewDiff("poster.event")
+	eventFailCount    = expvar.NewDiff("poster.event_fail")
+	eventLatencyCount = expvar.NewAverage("poster.event_latency", 10)
 )
 
 func init() {

@@ -17,7 +17,7 @@ type Collector func() ([]*models.Metric, error)
 var (
 	collectorFactory = make(map[string]Collector, 15)
 	collectorLock    sync.RWMutex
-	collectCounter   = expvar.NewBase("sys.collect")
+	collectCounter   = expvar.NewDiff("sys.collect")
 )
 
 func init() {
@@ -67,7 +67,7 @@ func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models
 			}
 			metricsChan <- metrics
 			log.Info("collect", "metrics", len(metrics))
-			collectCounter.Set(int64(len(metrics)))
+			collectCounter.Incr(int64(len(metrics)))
 		}
 		<-ticker.C
 	}

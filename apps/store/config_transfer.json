@@ -1,0 +1,6 @@
+{
+	"urls": {
+		"local": "http://127.0.0.1:10899"
+	},
+	"pull_concurrent": 2
+}
