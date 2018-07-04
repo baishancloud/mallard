@@ -23,10 +23,12 @@ import (
 )
 
 var (
-	version    = "2.5.0"
+	version    = "2.5.1"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("alarm")
+
+	statsDumpFile = "alarm_stats.json"
 )
 
 func prepare() {
@@ -66,7 +68,6 @@ func main() {
 
 	alertprocess.Register(redisdata.Alert, msggcall.Call)
 
-	// cfg.DbDSN = ""
 	if cfg.DbDSN != "" {
 		db, err := initDB(cfg.DbDSN)
 		if err != nil {
@@ -77,7 +78,7 @@ func main() {
 		go alertdata.StreamAlert()
 		alertprocess.Register(alertdata.Alert)
 
-		alertdata.SetStats("mallard2_alarm_stat", "alarm_stats.json")
+		alertdata.SetStats("mallard2_alarm_stat", statsDumpFile)
 		go alertdata.ScanStat(time.Minute, 1800, cfg.StatMetricFile)
 	} else {
 		log.Info("db-disabled")

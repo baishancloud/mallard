@@ -127,6 +127,7 @@ func lineMsggRequest(eid string, req *msggRequest) []string {
 		}
 	} else {
 		s = append(s, ",")
+		s[0] = "【报警恢复】" + req.Note
 	}
 
 	teamName := req.SendRequest.Template + ","

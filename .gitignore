@@ -4,6 +4,7 @@
 *.out
 *.exe
 *.DS_Store 
+*.dump
 .vscode/
 **/_dump
 **/_data
