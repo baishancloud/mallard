@@ -67,21 +67,23 @@ func Call(record redisdata.EventRecord) {
 		return
 	}
 
-	// fill uic
-	uic := "000"
-	action := configapi.AlarmActionForStrategy(st.ID)
-	if action != nil {
-		uic = action.Uic
-	}
-
-	if commandFile != "" {
-		go CallCommand(record.Event, st.Note, uic)
-	}
-	if actionFile != "" {
-		go CallAction(record.Event, st.Note, uic)
-	}
 	if msggFile != "" {
 		go CallMsgg(record.Event, st)
+	}
+
+	if record.Event.Status == models.EventProblem.String() {
+		// fill uic
+		uic := "000"
+		action := configapi.AlarmActionForStrategy(st.ID)
+		if action != nil {
+			uic = action.Uic
+		}
+		if commandFile != "" {
+			go CallCommand(record.Event, st.Note, uic)
+		}
+		if actionFile != "" {
+			go CallAction(record.Event, st.Note, uic)
+		}
 	}
 }
 
