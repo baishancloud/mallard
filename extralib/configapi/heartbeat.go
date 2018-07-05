@@ -1,6 +1,10 @@
 package configapi
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"sync"
 	"time"
 
@@ -58,4 +62,34 @@ func SetHeartbeat(endpoint, version, plugin, ip, remote string) {
 		Remote:        remote,
 		Endpoint:      ""}
 	heartbeatLock.Unlock()
+}
+
+type (
+	// HeartbeatResult is result of heartbeat stats request
+	HeartbeatResult struct {
+		Endpoints []HeartbeatStat `json:"endpoints"`
+	}
+	// HeartbeatStat is items of heartbeat
+	HeartbeatStat struct {
+		Endpoint string `json:"endpoint" db:"hostname"`
+		LiveAt   int64  `json:"live_at" db:"live_at"`
+		Duration int64  `json:"duration" db:"-"`
+		key      string
+	}
+)
+
+// GetHeartbeatData gets current heartbeat data
+func GetHeartbeatData(diff int64, timeRange int64) (*HeartbeatResult, error) {
+	address := fmt.Sprintf(centerAPI+"/api/endpoint/live?duration=%d&range=%d", diff, timeRange)
+	resp, err := http.Get(address)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	result := new(HeartbeatResult)
+	return result, json.Unmarshal(body, result)
 }
