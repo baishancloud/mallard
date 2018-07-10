@@ -1,0 +1,10 @@
+/usr/local/mallard/*/var/*.log {
+    daily
+    rotate 5
+    size 30M
+    missingok
+    dateext
+    copytruncate
+    compress
+    delaycompress
+}

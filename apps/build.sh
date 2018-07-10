@@ -1,11 +1,18 @@
 #!/bin/bash
 
 cmd=$1
+toType=$2
 
 if [ -z "$cmd" ]; then
     echo "please input app name to build"
     exit 1
 fi
+
+if [ -z "$toType" ]; then
+    toType="tar.gz"
+    echo "set packing to tar.gz"
+fi    
+
 
 apps=(
     'mallard2-agent::agent'
@@ -17,6 +24,30 @@ apps=(
     'mallard2-judge::judge'
 )
 isbuild=0
+
+rpmBuild(){
+    KEY=$1
+    ver=$2
+    dir=$3
+    fix=$4
+    arch=$5
+    if [ $arch == "7" ]; then
+        arch="el7"
+    else
+        arch="el6"
+    fi
+    rpmEl6File=$KEY-$ver.$arch.spec
+    echo "new rpm spec : $rpmEl6File"
+    cp build.spec $rpmEl6File
+    sed -i "s/\[appName\]/$KEY/g" $rpmEl6File
+    sed -i "s/\[version\]/$ver/g" $rpmEl6File
+    sed -i "s/\[fixversion\]/$fix/g" $rpmEl6File
+    sed -i "s/\[arch\]/$arch/g" $rpmEl6File
+    sed -i "s/\[destDir\]/$dir/g" $rpmEl6File
+    sed -i "s#\[srcDir\]#`pwd`#g" $rpmEl6File
+    rpmbuild -bb $rpmEl6File
+    rm -rf $rpmEl6File
+}
 
 for index in "${apps[@]}"; do 
     KEY="${index%%::*}"
@@ -60,9 +91,16 @@ stdout_logfile = /usr/local/mallard/$dir/var/app.log
 stdout_logfile_maxbytes = 200MB
 directory = /usr/local/mallard/$dir/
 EOF
-        echo "tar $KEY-$ver.tar.gz << $KEY $KEY-config.json $KEY.conf"
-        tar czf $KEY-$ver.tar.gz $KEY $KEY-config.json $KEY.conf
-        rm -rf $KEY $KEY-config.json $KEY.conf
+        if [ $toType == "tar.gz" ]; then
+            echo "tar $KEY-$ver.tar.gz << $KEY $KEY-config.json $KEY.conf"
+            tar czf $KEY-$ver.tar.gz $KEY $KEY-config.json $KEY.conf
+            rm -rf $KEY $KEY-config.json $KEY.conf
+        fi
+        if [ $toType == "rpm" ]; then
+            rpmBuild $KEY $ver $dir "1" "6"
+            rpmBuild $KEY $ver $dir "1" "7"
+            rm -rf $KEY $KEY-config.json $KEY.conf
+        fi
 
         isbuild=1
     fi
