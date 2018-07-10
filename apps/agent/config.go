@@ -15,19 +15,21 @@ type (
 		Addon map[string][]string `json:"addon,omitempty"`
 	}
 	config struct {
-		Debug         bool           `json:"debug,omitempty"`
-		Endpoint      string         `json:"endpoint,omitempty"`
-		Core          int            `json:"core,omitempty"`
-		HTTPAddr      string         `json:"http_addr,omitempty"`
-		Transfer      transferConfig `json:"transfer,omitempty"`
-		SysCollect    int            `json:"sys_collect,omitempty"`
-		SysPrefix     string         `json:"sys_prefix,omitempty"`
-		PluginsDir    string         `json:"plugins_dir,omitempty"`
-		PluginsLogDir string         `json:"plugins_log_dir,omitempty"`
-		DisableJudge  bool           `json:"disable_judge,omitempty"`
-		PerfFile      string         `json:"perf_file,omitempty"`
-		ReadLogDir    string         `json:"read_log_dir,omitempty"`
-		WriteLogFile  string         `json:"write_log_file,omitempty"`
+		Debug             bool           `json:"debug,omitempty"`
+		Endpoint          string         `json:"endpoint,omitempty"`
+		Core              int            `json:"core,omitempty"`
+		HTTPAddr          string         `json:"http_addr,omitempty"`
+		Transfer          transferConfig `json:"transfer,omitempty"`
+		SysCollect        int            `json:"sys_collect,omitempty"`
+		SysPrefix         string         `json:"sys_prefix,omitempty"`
+		PluginsDir        string         `json:"plugins_dir,omitempty"`
+		PluginsLogDir     string         `json:"plugins_log_dir,omitempty"`
+		DisableJudge      bool           `json:"disable_judge,omitempty"`
+		PerfFile          string         `json:"perf_file,omitempty"`
+		ReadLogDir        string         `json:"read_log_dir,omitempty"`
+		WriteLogFile      string         `json:"write_log_file,omitempty"`
+		WriteLogCleanDays int            `json:"write_log_clean_days,omitempty"`
+		WriteLogGzipDays  int            `json:"write_log_gzip_days,omitempty"`
 	}
 )
 
@@ -61,13 +63,15 @@ func defaultConfig() *config {
 				"http://127.0.0.1:10999",
 			},
 		},
-		DisableJudge:  false,
-		PluginsDir:    "./plugins",
-		PluginsLogDir: "./plugins_logs",
-		PerfFile:      "./datalogs/mallard2_agent.log",
-		ReadLogDir:    "./datalogs",
-		WriteLogFile:  "./var/metrics_%s.log",
-		SysPrefix:     "sys",
+		DisableJudge:      false,
+		PluginsDir:        "./plugins",
+		PluginsLogDir:     "./plugins_logs",
+		PerfFile:          "./datalogs/mallard2_agent.log",
+		ReadLogDir:        "./datalogs",
+		WriteLogFile:      "./var/metrics_%s.json",
+		SysPrefix:         "sys",
+		WriteLogCleanDays: 4,
+		WriteLogGzipDays:  2,
 	}
 }
 

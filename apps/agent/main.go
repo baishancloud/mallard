@@ -90,7 +90,7 @@ func main() {
 	go httpserver.Listen(cfg.HTTPAddr)
 
 	logutil.SetReadDir(cfg.ReadLogDir)
-	logutil.SetWriteFile(cfg.WriteLogFile)
+	logutil.SetWriteFile(cfg.WriteLogFile, cfg.WriteLogCleanDays, cfg.WriteLogGzipDays)
 	go logutil.ReadInterval(time.Second*5, metricsQueue)
 
 	go expvar.PrintAlways("mallard2_agent_perf", cfg.PerfFile, time.Minute*2)

@@ -24,7 +24,9 @@ var (
 )
 
 // SetWriteFile sets writing filename
-func SetWriteFile(file string) {
+func SetWriteFile(file string, cleanDays int, gzipDays int) {
+	LogCleanDays = cleanDays
+	LogGzipDays = gzipDays
 	if file == "" {
 		return
 	}
@@ -87,7 +89,7 @@ func tryRotate() {
 	if newFile != writingFilename {
 		log.Debug("do-rotate", "old", writingFilename, "new", newFile)
 		// reset again
-		SetWriteFile(writingFileLayout)
+		SetWriteFile(writingFileLayout, LogCleanDays, LogGzipDays)
 		go CleanOldRotated()
 	}
 }
