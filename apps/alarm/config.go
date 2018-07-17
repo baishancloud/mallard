@@ -17,26 +17,36 @@ type config struct {
 
 	CommandFile string `json:"command_file"`
 	ActionFile  string `json:"action_file"`
-	MsggFile    string `json:"msgg_file"`
+
+	MsggFile       string `json:"msgg_file"`
+	MsggMergeSize  int    `json:"msgg_merge_size"`
+	MsggMergeLevel int    `json:"msgg_merge_level"`
+	MsggTicker     int    `json:"msgg_ticker"`
 
 	PerfFile string `json:"perf_file"`
 	Debug    bool   `json:"debug"`
 
-	StatMetricFile string `json:"stat_metric_file"`
+	StatMetricDuration int64  `json:"stat_metric_duration"`
+	StatMetricFile     string `json:"stat_metric_file"`
+	StatMsggUserFile   string `json:"stat_msgg_user_file"`
 }
 
 func defaultConfig() config {
 	return config{
-		CenterAddr:        "http://127.0.0.1:10999",
-		RedisAddr:         "127.0.0.1:6379",
-		DbDSN:             "",
-		AlarmsDumpFile:    "problems.log",
-		AlarmSubscribeKey: "",
-		LowQueues:         []string{},
-		HighQueues:        []string{},
-		CommandFile:       "",
-		ActionFile:        "",
-		MsggFile:          "",
-		Debug:             true,
+		CenterAddr:         "http://127.0.0.1:10999",
+		RedisAddr:          "127.0.0.1:6379",
+		DbDSN:              "",
+		AlarmsDumpFile:     "problems.log",
+		AlarmSubscribeKey:  "",
+		LowQueues:          []string{},
+		HighQueues:         []string{},
+		CommandFile:        "",
+		ActionFile:         "",
+		MsggFile:           "",
+		MsggMergeLevel:     3,
+		MsggMergeSize:      5,
+		MsggTicker:         10,
+		Debug:              true,
+		StatMetricDuration: 1800,
 	}
 }

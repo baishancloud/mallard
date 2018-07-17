@@ -2,12 +2,14 @@ package msggcall
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
 	"github.com/baishancloud/mallard/componentlib/compute/sqldata"
 	"github.com/baishancloud/mallard/corelib/expvar"
+	"github.com/baishancloud/mallard/corelib/utils"
 )
 
 type msggRequest struct {
@@ -20,6 +22,7 @@ type msggRequest struct {
 	Time        int64                     `json:"time,omitempty"`
 	Sertypes    string                    `json:"sertypes,omitempty"`
 	Status      string                    `json:"status,omitempty"`
+	EventID     string                    `json:"event_id,omitempty"`
 }
 
 var (
@@ -28,21 +31,26 @@ var (
 	msggCallZeroCount  = expvar.NewDiff("alert.msgg_call_zero")
 	msggWaitCount      = expvar.NewBase("alert.msgg_wait")
 	msggMarkCount      = expvar.NewDiff("alert.msgg_mark")
+	msggMergeCount     = expvar.NewDiff("alert.msgg_merge")
 )
 
 func init() {
-	expvar.Register(msggCallCount, msggCallErrorCount, msggCallZeroCount, msggWaitCount, msggMarkCount)
+	expvar.Register(msggCallCount, msggCallErrorCount, msggCallZeroCount, msggWaitCount, msggMarkCount, msggMergeCount)
 }
 
 // ScanRequests starts scanning requests
-func ScanRequests(interval time.Duration) {
+func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
+	var count int64
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
+		count++
+		slowFlag := count%2 == 0
 		now := <-ticker.C
 		nowUnix := now.Unix()
 		requestsLock.Lock()
 		var wait int64
+		shouldAlarms := make(map[string]*msggRequest)
 		for eid, reqs := range requests {
 			if redisdata.HasNoAlarmFlag(eid) {
 				for t, msggReq := range reqs {
@@ -53,12 +61,19 @@ func ScanRequests(interval time.Duration) {
 					delete(reqs, t)
 					log.Debug("clean-NOALARM", "eid", eid, "t", t)
 				}
+				continue
 			}
 			for t, msggReq := range reqs {
+				if slowFlag && msggReq.Level >= mergeLevel {
+					log.Debug("wait-low-level", "eid", eid, "t", t, "diff", nowUnix-t, "step", msggReq.SendRequest.Step)
+					wait++
+					continue
+				}
 				if nowUnix >= t {
-					go runMsggRequest(eid, msggReq)
+					// go runMsggRequest(eid, msggReq)
 					delete(requests[eid], t)
 					log.Debug("del-req-timeup", "eid", eid, "t", t)
+					shouldAlarms[eid] = msggReq
 				} else {
 					wait++
 					log.Debug("wait-req", "eid", eid, "t", t, "diff", nowUnix-t, "step", msggReq.SendRequest.Step)
@@ -71,6 +86,48 @@ func ScanRequests(interval time.Duration) {
 		}
 		msggWaitCount.Set(wait)
 		requestsLock.Unlock()
+		handleRequests(shouldAlarms, mergeSize)
+	}
+}
+
+func handleRequests(requests map[string]*msggRequest, mergeSize int) {
+	mergedRequests := make(map[string][]*msggRequest)
+	for eid, req := range requests {
+		if req.Recover {
+			mergedRequests[eid] = append(mergedRequests[eid], req)
+			continue
+		}
+		idx := strings.LastIndex(eid, "_")
+		if idx < 0 {
+			mergedRequests[eid] = append(mergedRequests[eid], req)
+			continue
+		}
+		key := eid[:idx]
+		mergedRequests[key] = append(mergedRequests[key], req)
+	}
+	for key, reqs := range mergedRequests {
+		if len(reqs) < mergeSize {
+			for _, req := range reqs {
+				go runMsggRequest(req.EventID, req)
+			}
+			continue
+		}
+		log.Debug("merge-msgg", "key", key, "reqs", len(reqs))
+		var eps []string
+		var note []rune
+		for _, req := range reqs {
+			eps = append(eps, req.Endpoint)
+			if len(note) < 512 {
+				note = append(note, []rune(" ; ")...)
+				note = append(note, []rune(req.Note)...)
+			}
+		}
+		eps = utils.StringSliceUnique(eps)
+		onlyReq := reqs[0]
+		onlyReq.Endpoint = strings.Join(eps, ",")
+		onlyReq.Note = "【共 " + strconv.Itoa(len(reqs)) + " 条】" + strings.TrimPrefix(string(note), " ; ") + "..."
+		go runMsggRequest(onlyReq.EventID, onlyReq)
+		msggMergeCount.Incr(1)
 	}
 }
 
@@ -89,6 +146,7 @@ func runMsggRequest(eid string, msggReq *msggRequest) {
 		return
 	}
 	log.Info("call-msgg", "eid", eid, "status", msggReq.Status, "args", args, "output", string(output))
+	go calculateUserCount(msggReq)
 }
 
 func lineMsggRequest(eid string, req *msggRequest) []string {

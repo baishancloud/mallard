@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	version    = "2.5.1"
+	version    = "2.5.2"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("alarm")
@@ -59,7 +59,8 @@ func main() {
 	redisdata.SetAlertSubscribe(cfg.AlarmSubscribeKey)
 
 	msggcall.SetFiles(cfg.CommandFile, cfg.ActionFile, cfg.MsggFile)
-	go msggcall.ScanRequests(time.Second * 10)
+	go msggcall.ScanRequests(time.Second*time.Duration(cfg.MsggTicker), cfg.MsggMergeLevel, cfg.MsggMergeSize)
+	go msggcall.SyncPrintCount("mallard2_alarm_msgg_users", time.Hour, cfg.StatMsggUserFile)
 
 	eventCh := make(chan redisdata.EventRecord, 1e4)
 	go redisdata.Pop(eventCh, time.Second)
@@ -79,7 +80,7 @@ func main() {
 		alertprocess.Register(alertdata.Alert)
 
 		alertdata.SetStats("mallard2_alarm_stat", statsDumpFile)
-		go alertdata.ScanStat(time.Minute, 1800, cfg.StatMetricFile)
+		go alertdata.ScanStat(time.Minute, cfg.StatMetricDuration, cfg.StatMetricFile)
 	} else {
 		log.Info("db-disabled")
 	}

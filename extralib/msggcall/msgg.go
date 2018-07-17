@@ -188,6 +188,7 @@ func AddRequests(event *models.EventFull, st *models.Strategy, isRecover bool) {
 			Time:        event.EventTime,
 			Sertypes:    event.PushedTags["sertypes"],
 			Status:      event.Status,
+			EventID:     event.ID,
 		}
 	}
 	requestsLock.Lock()
