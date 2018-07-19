@@ -168,7 +168,7 @@ func Check(event *models.Event) (int, error) {
 		// if endpoint is in maintain,
 		// ignore any problem event from the endpoint
 		if redisdata.CheckEndpointMaintain(event.Endpoint) {
-			log.Info("ignore-maintain", "status", event.Status.String(), "eid", event.ID)
+			log.Info("ignore-maintain", "status", event.Status.String(), "eid", event.ID, "endpoint", event.Endpoint)
 			recvMaintains.Incr(1)
 			return opIgore, nil
 		}

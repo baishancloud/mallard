@@ -45,7 +45,7 @@ func defaultConfig() config {
 		MsggFile:           "",
 		MsggMergeLevel:     3,
 		MsggMergeSize:      5,
-		MsggTicker:         10,
+		MsggTicker:         5,
 		Debug:              true,
 		StatMetricDuration: 1800,
 	}

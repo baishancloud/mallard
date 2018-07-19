@@ -45,7 +45,7 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 	defer ticker.Stop()
 	for {
 		count++
-		slowFlag := count%2 == 0
+		slowFlag := count%3 == 0
 		now := <-ticker.C
 		nowUnix := now.Unix()
 		requestsLock.Lock()
@@ -117,8 +117,8 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 		var note []rune
 		for _, req := range reqs {
 			eps = append(eps, req.Endpoint)
-			if len(note) < 512 {
-				note = append(note, []rune(" ; ")...)
+			if len(note) < 512 && req.Note != "" {
+				note = append(note, []rune(";")...)
 				note = append(note, []rune(req.Note)...)
 			}
 		}

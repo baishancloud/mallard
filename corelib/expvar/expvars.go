@@ -31,12 +31,10 @@ func Register(counters ...interface{}) {
 	counterLock.Unlock()
 }
 
-// Expose returns all current vars
-func Expose(withSelf bool) map[string]interface{} {
-	counterLock.RLock()
-	defer counterLock.RUnlock()
-	result := make(map[string]interface{}, len(counterFactory))
-	for _, ct := range counterFactory {
+// ExposeFactory exposes values to map
+func ExposeFactory(values []interface{}, withSelf bool) map[string]interface{} {
+	result := make(map[string]interface{}, len(values))
+	for _, ct := range values {
 		if avg, ok := ct.(Averager); ok {
 			result[avg.Name()+".avg"] = utils.FixFloat(avg.Avg())
 			continue
@@ -59,6 +57,14 @@ func Expose(withSelf bool) map[string]interface{} {
 			result[k] = v
 		}
 	}
+	return result
+}
+
+// Expose returns all current vars
+func Expose(withSelf bool) map[string]interface{} {
+	counterLock.RLock()
+	result := ExposeFactory(counterFactory, withSelf)
+	counterLock.RUnlock()
 	currentLock.Lock()
 	currentVars = result
 	currentLock.Unlock()
@@ -99,7 +105,7 @@ func HTTPHandler(rw http.ResponseWriter, r *http.Request) {
 // PrintAlways prints expvars to file in time loop
 func PrintAlways(metricName string, file string, interval time.Duration) {
 	time.Sleep(time.Second * 10)
-	step := int(interval)
+	step := int(interval.Seconds())
 	for {
 		values := Expose(true)
 		log.Debug("stats", "perf", values)
