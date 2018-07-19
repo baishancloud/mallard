@@ -20,6 +20,7 @@ type (
 		Password  string            `json:"password,omitempty"`
 		Blacklist []string          `json:"blacklist,omitempty"`
 		WhiteList []string          `json:"white_list,omitempty"`
+		Expire    int64             `json:"expire,omitempty"`
 	}
 	// Group is influxdb nodes manager
 	Group struct {
@@ -34,6 +35,7 @@ var (
 	groupLock   sync.RWMutex
 	groups      = make(map[string]*Group)
 	groupAccept = make(map[string][]string)
+	groupExpire = make(map[string]int64)
 )
 
 // SetCluster sets cluster
@@ -62,6 +64,7 @@ func SetCluster(cOpt ClusterOption) {
 	for name, gOpt := range cOpt {
 		groupLock.Lock()
 		groups[name] = NewGroup(name, gOpt)
+		groupExpire[name] = gOpt.Expire
 		groupLock.Unlock()
 		if len(gOpt.WhiteList) > 0 {
 			for metric := range acceptTemp {
@@ -172,6 +175,16 @@ func (g *Group) Send(points []*client.Point) {
 
 	for _, node := range g.nodes {
 		nd2 := node
-		go nd2.Send(data, dataLen, true)
+		go nd2.Send(data, dataLen, false)
 	}
+}
+
+func (g *Group) counters() map[string]map[string]interface{} {
+	g.nodesLock.RLock()
+	defer g.nodesLock.RUnlock()
+	results := make(map[string]map[string]interface{}, len(g.nodes))
+	for _, node := range g.nodes {
+		results[node.Name] = node.counters()
+	}
+	return results
 }

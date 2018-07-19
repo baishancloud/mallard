@@ -18,10 +18,11 @@ var (
 	}
 )
 
-func getURL(url string, timeout time.Duration) (*http.Response, error) {
+func getURL(url string, timeout time.Duration) (*http.Response, time.Duration, error) {
+	t := time.Now()
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	for k, v := range httptoken.BuildHeader("store-puller") {
 		req.Header.Set(k, v)
@@ -30,5 +31,6 @@ func getURL(url string, timeout time.Duration) (*http.Response, error) {
 		Transport: transport,
 		Timeout:   timeout,
 	}
-	return client.Do(req)
+	resp, err := client.Do(req)
+	return resp, time.Since(t), err
 }

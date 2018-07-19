@@ -126,10 +126,10 @@ func (n *Node) Send(data []byte, pLen int64, retry bool) {
 	n.sizeCounter.Set(int64(len(data)))
 }
 
-func (n *Node) counters() []interface{} {
-	return []interface{}{
+func (n *Node) counters() map[string]interface{} {
+	return expvar.ExposeFactory([]interface{}{
 		n.reqCounter, n.failCounter, n.sendCounter,
 		n.latencyCounter, n.conflictCounter, n.retryCount,
 		n.sizeCounter,
-	}
+	}, false)
 }
