@@ -43,19 +43,20 @@ func prepare() {
 func main() {
 	prepare()
 
+	serverinfo.UseAllConf = cfg.UseAllConf
 	serverinfo.Scan(cfg.Endpoint)
 
-	metricsQueue := make(chan []*models.Metric, 1e4)
-	eventsQueue := make(chan []*models.Event, 1e4)
-	errorQueue := make(chan error, 1e3)
+	metricsQueue := make(chan []*models.Metric, 2e4)
+	eventsQueue := make(chan []*models.Event, 2e4)
+	errorQueue := make(chan error, 2e3)
 
 	transfer.SetURLs(cfg.Transfer.FullURLs(serverinfo.Hostname()), cfg.Transfer.APIs)
-	go transfer.SyncConfig(time.Second*30, func(epData *models.EndpointData, isUpdate bool) {
+	go transfer.SyncConfig(time.Second*time.Duration(cfg.Transfer.ConfigInterval), func(epData *models.EndpointData, isUpdate bool) {
 		if isUpdate && epData.Config != nil {
 			if !cfg.DisableJudge {
 				judger.SetStrategyData(epData.Config.Strategies)
 			}
-			plugins.SetDir(cfg.PluginsDir, cfg.PluginsLogDir, epData.Config.Plugins)
+			plugins.SetDir(cfg.Plugin.Dir, cfg.Plugin.LogDir, epData.Config.Plugins)
 		}
 		if epData.Time > 0 {
 			syscollector.SetSystime(epData.Time)
@@ -79,19 +80,19 @@ func main() {
 
 	go processor.Process(metricsQueue, eventsQueue, errorQueue)
 
-	go syscollector.Collect(cfg.SysPrefix,
-		time.Second*time.Duration(cfg.SysCollect),
+	go syscollector.Collect(cfg.Collector.Prefix,
+		time.Second*time.Duration(cfg.Collector.Interval),
 		metricsQueue, errorQueue)
 
 	go plugins.Exec(metricsQueue)
 	go plugins.SyncScan(time.Minute)
 
 	httpserver.SetQueue(metricsQueue)
-	go httpserver.Listen(cfg.HTTPAddr)
+	go httpserver.Listen(cfg.Server.Addr)
 
-	logutil.SetReadDir(cfg.ReadLogDir)
-	logutil.SetWriteFile(cfg.WriteLogFile, cfg.WriteLogCleanDays, cfg.WriteLogGzipDays)
-	go logutil.ReadInterval(time.Second*5, metricsQueue)
+	logutil.SetReadDir(cfg.Logutil.ReadDir)
+	logutil.SetWriteFile(cfg.Logutil.WriteFile, cfg.Logutil.CleanDays, cfg.Logutil.GzipDays)
+	go logutil.ReadInterval(time.Second*time.Duration(cfg.Logutil.ReadInterval), metricsQueue)
 
 	go expvar.PrintAlways("mallard2_agent_perf", cfg.PerfFile, time.Minute*2)
 

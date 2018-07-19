@@ -38,6 +38,7 @@ func SetDir(dir string, logDir string, runningDir []string) {
 	pluginLogDir = logDir
 	pluginRunDirList = runningDir
 	log.Info("set-dir", "dir", dir, "log_dir", logDir, "running", runningDir)
+	go ScanFiles()
 }
 
 // Version return plugins version number
