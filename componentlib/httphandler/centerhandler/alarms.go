@@ -103,6 +103,37 @@ func alarmsOneRequest(rw http.ResponseWriter, r *http.Request, _ httprouter.Para
 	log.Debug("req-alarm-request", "r", r.RemoteAddr, "bytes", dataLen, "is_gzip", isGzip, "st", st)
 }
 
+func alarmsOneForStrategy(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	reqAlarmCount.Incr(1)
+	isGzip := (r.FormValue("gzip") != "")
+	st := r.FormValue("strategy_id")
+	if st == "" {
+		httputil.Response404(rw, r)
+		return
+	}
+	sid, err := strconv.Atoi(st)
+	if err != nil {
+		httputil.ResponseFail(rw, r, err)
+		return
+	}
+	data := sqldata.AlarmsAll()
+	if data == nil {
+		httputil.Response404(rw, r)
+		return
+	}
+	forSt := data.ForStrategies[sid]
+	if forSt == nil {
+		httputil.Response404(rw, r)
+		return
+	}
+	dataLen, err := httputil.ResponseJSON(rw, forSt, isGzip, true)
+	if err != nil {
+		httputil.ResponseFail(rw, r, err)
+		return
+	}
+	log.Debug("req-alarm-for-strategy", "r", r.RemoteAddr, "bytes", dataLen, "is_gzip", isGzip, "st", st)
+}
+
 func alarmsTeam(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	reqAlarmCount.Incr(1)
 	teamName := r.FormValue("name")

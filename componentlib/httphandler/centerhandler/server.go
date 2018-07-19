@@ -25,10 +25,12 @@ func Handlers() http.Handler {
 	r.GET("/api/endpoint/live", endpointsLive)
 	r.GET("/api/endpoint/live_at", endpointLiveAt)
 	r.GET("/api/endpoint/maintain", endpointMaintain)
+	r.GET("/api/endpoint/info", endpointsOneInfo)
 
 	r.GET("/api/alarm", alarmsAllData)
 	r.GET("/api/alarm/all", alarmsAllData)
 	r.GET("/api/alarm/request", alarmsOneRequest)
+	r.GET("/api/alarm/for_strategy", alarmsOneForStrategy)
 	r.GET("/api/alarm/requests", alarmsAllRequests)
 	r.GET("/api/alarm/team", alarmsTeam)
 

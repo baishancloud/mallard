@@ -194,3 +194,23 @@ func endpointsInfos(rw http.ResponseWriter, r *http.Request, _ httprouter.Params
 	httputil.ResponseJSON(rw, infos, isGzip, false)
 	log.Debug("req-host-infos-ok", "r", r.RemoteAddr, "is_gzip", isGzip)
 }
+
+func endpointsOneInfo(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	reqEndpointCount.Incr(1)
+	ep := r.FormValue("endpoint")
+	if ep == "" {
+		ep = r.FormValue("ep")
+		if ep == "" {
+			httputil.ResponseFail(rw, r, errors.New("bad-request"))
+			return
+		}
+	}
+	infos := sqldata.HostInfosAll()
+	if len(infos) == 0 {
+		httputil.Response404(rw, r)
+		return
+	}
+	isGzip := (r.FormValue("gzip") == "1")
+	httputil.ResponseJSON(rw, infos[ep], isGzip, false)
+	log.Debug("req-host-info-ok", "r", r.RemoteAddr, "ep", ep, "is_gzip", isGzip)
+}
