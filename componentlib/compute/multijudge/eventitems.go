@@ -2,6 +2,7 @@ package multijudge
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sync"
@@ -9,32 +10,39 @@ import (
 
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 )
 
 type (
-	eventItem struct {
-		Metric          *models.Metric   `json:"metric,omitempty"`
-		MultiStrategyID int              `json:"multi_strategy_id,omitempty"`
-		GroupHash       string           `json:"group_hash,omitempty"`
-		MetricHash      string           `json:"metric_hash,omitempty"`
-		MetricValueHash string           `json:"-"`
-		LeftValue       float64          `json:"left_value,omitempty"`
-		Score           float64          `json:"score,omitempty"`
-		Strategy        *models.Strategy `json:"strategy,omitempty"`
+	// ScoreItem is item for one score
+	ScoreItem struct {
+		Metric          *models.Metric `json:"metric,omitempty"`
+		MultiStrategyID int            `json:"multi_strategy_id,omitempty"`
+		GroupHash       string         `json:"group_hash,omitempty"`
+		MetricHash      string         `json:"metric_hash,omitempty"`
+		MetricValueHash string         `json:"-"`
+		LeftValue       float64        `json:"left_value,omitempty"`
+		Score           float64        `json:"score,omitempty"`
+		strategy        *models.Strategy
 	}
-	eventItems struct {
-		Items map[string]*eventItem `json:"items,omitempty"`
-		lock  sync.RWMutex
+	// ScoreItems is score items group
+	ScoreItems struct {
+		Items      map[string]*ScoreItem       `json:"items,omitempty"`
+		Startegies map[string]*models.Strategy `json:"startegies,omitempty"`
+		lock       sync.RWMutex
 	}
 )
 
-func (ei *eventItems) Add(item *eventItem) {
+// Add adds item to score items
+func (ei *ScoreItems) Add(item *ScoreItem) {
 	ei.lock.Lock()
 	ei.Items[item.MetricValueHash] = item
+	ei.Startegies[item.Metric.Name] = item.strategy
 	ei.lock.Unlock()
 }
 
-func (ei *eventItems) Remove(metricValueHash string) bool {
+// Remove removes one value in items
+func (ei *ScoreItems) Remove(metricValueHash string) bool {
 	ei.lock.Lock()
 	_, ok := ei.Items[metricValueHash]
 	if ok {
@@ -44,34 +52,53 @@ func (ei *eventItems) Remove(metricValueHash string) bool {
 	return ok
 }
 
-func (ei *eventItems) Scan() (map[string]float64, float64) {
+// ScoreResult is result of score items
+type ScoreResult struct {
+	Total      float64
+	Scores     map[string]float64
+	LeftValues map[string]float64
+}
+
+// Scan scans the items to generate score result
+func (ei *ScoreItems) Scan() ScoreResult {
 	scores := make(map[string]float64)
+	leftValues := make(map[string]float64)
 	ei.lock.RLock()
 	for _, item := range ei.Items {
-		scores[item.MetricHash] = item.Score
+		if item.Score > scores[item.MetricHash] {
+			scores[item.MetricHash] = item.Score
+			leftValues[item.MetricHash] = item.LeftValue
+		}
 	}
 	ei.lock.RUnlock()
 	var total float64
 	for _, value := range scores {
 		total += value
 	}
-	return scores, total
+	return ScoreResult{
+		Total:      total,
+		Scores:     scores,
+		LeftValues: leftValues,
+	}
 }
 
 type (
-	eventGroup struct {
-		Groups map[string]*eventItems `json:"groups,omitempty"`
+	// ScoreGroup is group of items for one multi-strategy
+	ScoreGroup struct {
+		Groups map[string]*ScoreItems `json:"groups,omitempty"`
 		lock   sync.RWMutex
 	}
 )
 
-func (eg *eventGroup) Add(item *eventItem) {
+// Add adds item to group
+func (eg *ScoreGroup) Add(item *ScoreItem) {
 	eg.lock.RLock()
 	items := eg.Groups[item.GroupHash]
 	eg.lock.RUnlock()
 	if items == nil {
-		items = &eventItems{
-			Items: make(map[string]*eventItem),
+		items = &ScoreItems{
+			Items:      make(map[string]*ScoreItem),
+			Startegies: make(map[string]*models.Strategy),
 		}
 		eg.lock.Lock()
 		eg.Groups[item.GroupHash] = items
@@ -80,7 +107,8 @@ func (eg *eventGroup) Add(item *eventItem) {
 	items.Add(item)
 }
 
-func (eg *eventGroup) Remove(groupHash, metricValueHash string) bool {
+// Remove removes item by hash in group
+func (eg *ScoreGroup) Remove(groupHash, metricValueHash string) bool {
 	eg.lock.RLock()
 	items := eg.Groups[groupHash]
 	eg.lock.RUnlock()
@@ -97,37 +125,29 @@ func (eg *eventGroup) Remove(groupHash, metricValueHash string) bool {
 	return false
 }
 
-type scoreForItems struct {
-	Total  float64            `json:"total,omitempty"`
-	Scores map[string]float64 `json:"scores,omitempty"`
-}
-
-func (eg *eventGroup) Scan() map[string]scoreForItems {
+// Scan scans the group to gets all results
+func (eg *ScoreGroup) Scan() map[string]ScoreResult {
 	eg.lock.RLock()
 	defer eg.lock.RUnlock()
-	result := make(map[string]scoreForItems, len(eg.Groups))
+	result := make(map[string]ScoreResult, len(eg.Groups))
 	for key, items := range eg.Groups {
-		scores, total := items.Scan()
-		result[key] = scoreForItems{
-			Total:  total,
-			Scores: scores,
-		}
+		result[key] = items.Scan()
 	}
 	return result
 }
 
 var (
-	cachedEvents     = make(map[int]*eventGroup)
+	cachedEvents     = make(map[int]*ScoreGroup)
 	cachedEventsLock sync.RWMutex
 )
 
-func setEventItem(item *eventItem) {
+func setEventItem(item *ScoreItem) {
 	cachedEventsLock.RLock()
 	group := cachedEvents[item.MultiStrategyID]
 	cachedEventsLock.RUnlock()
 	if group == nil {
-		group = &eventGroup{
-			Groups: make(map[string]*eventItems),
+		group = &ScoreGroup{
+			Groups: make(map[string]*ScoreItems),
 		}
 		cachedEventsLock.Lock()
 		cachedEvents[item.MultiStrategyID] = group
@@ -161,29 +181,47 @@ func init() {
 	expvar.Register(judgeGroupCount, judgeHitCount, judgeRemoveCount, judgeScoreAlarmCount)
 }
 
-func scanItems() {
-	cachedEventsLock.RLock()
+func scanItems() []*models.Event {
+	cachedEventsLock.Lock()
 	var count int
+	var nowUnix = time.Now().Unix()
+	var events []*models.Event
 	for muID, group := range cachedEvents {
 		unit := GetUnit(muID)
 		if unit == nil {
-			log.Warn("scan-nil-unit", "muid", muID)
+			log.Warn("remove-nil-unit", "muid", muID)
+			delete(cachedEvents, muID)
 			continue
 		}
 		scoreResults := group.Scan()
 		for hash, result := range scoreResults {
-			ok := unit.CheckScore(result.Total)
-			log.Debug("check-score", "ok", ok, "hash", hash, "result", result)
-			if ok {
-				judgeScoreAlarmCount.Incr(1)
+			trigger := unit.CheckScore(result.Total)
+			event := &models.Event{
+				Time:       nowUnix,
+				Status:     models.EventOk,
+				Expression: muID,
+				ID:         fmt.Sprintf("e_%d_%s", muID, utils.MD5HashString(hash)),
+				LeftValue:  result.Total,
+				Fields: map[string]interface{}{
+					"total":     result.Total,
+					"score":     result.Scores,
+					"leftvalue": result.LeftValues,
+				},
 			}
+			if trigger {
+				judgeScoreAlarmCount.Incr(1)
+				event.Status = models.EventProblem
+			}
+			events = append(events, event)
+			log.Debug("check-event", "status", event.Status, "event", event)
 		}
 		count += len(group.Groups)
 	}
-	log.Info("scan-events", "groups", count)
+	log.Info("scan", "groups", count, "events", len(events))
 	judgeGroupCount.Set(int64(count))
 	dumpCachedEvents()
-	cachedEventsLock.RUnlock()
+	cachedEventsLock.Unlock()
+	return events
 }
 
 // ScanForEvents scans cached events to trigger combined-event
@@ -193,13 +231,16 @@ func ScanForEvents(interval time.Duration) {
 	defer ticker.Stop()
 	for {
 		<-ticker.C
-		go scanItems()
+		events := scanItems()
+		if len(events) > 0 {
+
+		}
 	}
 }
 
 // AllCachedEvents returns copy of cached events
-func AllCachedEvents() map[int]*eventGroup {
-	cp := make(map[int]*eventGroup)
+func AllCachedEvents() map[int]*ScoreGroup {
+	cp := make(map[int]*ScoreGroup)
 	cachedEventsLock.RLock()
 	defer cachedEventsLock.RUnlock()
 	for key, group := range cachedEvents {

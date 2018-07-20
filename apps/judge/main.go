@@ -52,7 +52,8 @@ func main() {
 	multijudge.SetCachedEventsFile("cache_events.dump")
 	multijudge.RegisterFn(judgestore.WriteMetrics, multijudge.Judge)
 	go multijudge.Process(queue)
-	go multijudge.ScanForEvents(time.Second * 10)
+	go multijudge.ScanForEvents(time.Second * 20)
+	go multijudge.ScanStrategies("multi_strategies.json")
 
 	go expvar.PrintAlways("mallard2_judge_perf", cfg.PerfFile, time.Minute)
 

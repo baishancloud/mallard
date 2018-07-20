@@ -11,7 +11,7 @@ func defaultConfig() config {
 	return config{
 		StoreDir: "./datastore",
 		HTTPAddr: "0.0.0.0:10988",
-		PerfFile: "perf.json",
+		PerfFile: "performance.json",
 		Debug:    true,
 	}
 }

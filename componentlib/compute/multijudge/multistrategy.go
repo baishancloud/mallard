@@ -1,7 +1,10 @@
 package multijudge
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/baishancloud/mallard/componentlib/agent/judger"
@@ -16,9 +19,20 @@ var (
 
 // MultiStrategy is some strategies to judge one event as score comparison
 type MultiStrategy struct {
-	Strategies      []*models.Strategy `json:"strategies,omitempty"`
-	ScoreOperator   string             `json:"score_operator,omitempty"`
-	ScoreRightValue float64            `json:"score_right_value,omitempty"`
+	ID              int      `json:"id,omitempty"`
+	StrategiesRules []string `json:"rules,omitempty"`
+	ScoreExpr       string   `json:"score_expr,omitempty"`
+	Note            string   `json:"note,omitempty"`
+	Priority        int      `json:"priority,omitempty"`
+	MaxStep         int      `json:"max_step,omitempty"`
+	Step            int      `json:"step,omitempty"`
+	Nodata          int      `json:"nodata,omitempty"`
+	RecoverNotify   int      `json:"recover_notify,omitempty"`
+	Status          int      `json:"status,omitempty"`
+
+	strategies      []*models.Strategy
+	scoreOperator   string
+	scoreRightValue float64
 }
 
 // MultiUnit is unit to handle one multi strategy
@@ -32,15 +46,105 @@ type MultiUnit struct {
 	rightValue float64
 }
 
-// NewMultiUnit creates multi-strategy unit
-func NewMultiUnit(id int, mst *MultiStrategy) *MultiUnit {
-	mu := &MultiUnit{
-		units:      make(map[string]*judger.StrategyUnit, len(mst.Strategies)),
-		id:         id,
-		compareFn:  judger.NewCompareFunc(mst.ScoreOperator),
-		rightValue: mst.ScoreRightValue,
+var (
+	// ErrorRulesEmpty means rules are empty
+	ErrorRulesEmpty = errors.New("rules-empty")
+	// ErrorRuleInvalidLength means rule segments are not correct length
+	ErrorRuleInvalidLength = errors.New("rule-invalid-length")
+	// ErrorUnknownScoreExpr means can not parse score expression
+	ErrorUnknownScoreExpr = errors.New("unknown-score-expr")
+)
+
+func parseRulesToStrategy(rules []string) ([]*models.Strategy, error) {
+	if len(rules) == 0 {
+		return nil, ErrorRulesEmpty
 	}
-	for _, st := range mst.Strategies {
+	ss := make([]*models.Strategy, 0, len(rules))
+	for _, rule := range rules {
+		st, err := parseOneRule(rule)
+		if err != nil {
+			return nil, err
+		}
+		if st != nil {
+			ss = append(ss, st)
+		}
+	}
+	return ss, nil
+}
+
+func parseOneRule(rule string) (*models.Strategy, error) {
+	segments := strings.Split(rule, ";")
+	if len(segments) < 6 {
+		return nil, ErrorRuleInvalidLength
+	}
+	st := &models.Strategy{
+		Metric:         segments[0],
+		FieldTransform: segments[1],
+		TagString:      segments[3],
+		GroupBys:       strings.Split(segments[4], ","),
+	}
+	var err error
+	st.Score, err = strconv.ParseFloat(segments[5], 64)
+	if err != nil {
+		return nil, err
+	}
+	idx := strings.Index(segments[2], ")")
+	if idx < 0 {
+		return nil, ErrorRuleInvalidLength
+	}
+	st.Func = segments[2][:idx+1]
+	st.Operator, st.RightValue, err = parseScoreOperator(segments[2][idx+1:])
+	if err != nil {
+		return nil, err
+	}
+	// log.Debug("parse-strategy", "st", st)
+	return st, nil
+}
+
+func parseScoreOperator(opt string) (string, float64, error) {
+	if strings.HasPrefix(opt, ">=") {
+		value, err := strconv.ParseFloat(strings.TrimPrefix(opt, ">="), 64)
+		return ">=", value, err
+	}
+	if strings.HasPrefix(opt, "<=") {
+		value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "<="), 64)
+		return "<=", value, err
+	}
+	if strings.HasPrefix(opt, "==") {
+		value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "=="), 64)
+		return "==", value, err
+	}
+	if strings.HasPrefix(opt, ">") {
+		value, err := strconv.ParseFloat(strings.TrimPrefix(opt, ">"), 64)
+		return ">", value, err
+	}
+	if strings.HasPrefix(opt, "<") {
+		value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "<"), 64)
+		return "<", value, err
+	}
+	if strings.HasPrefix(opt, "=") {
+		value, err := strconv.ParseFloat(strings.TrimPrefix(opt, "="), 64)
+		return "==", value, err
+	}
+	return "", 0, ErrorUnknownScoreExpr
+}
+
+// NewMultiUnit creates multi-strategy unit
+func NewMultiUnit(id int, mst *MultiStrategy) (*MultiUnit, error) {
+	op, rightValue, err := parseScoreOperator(mst.ScoreExpr)
+	if err != nil {
+		return nil, err
+	}
+	mu := &MultiUnit{
+		units:      make(map[string]*judger.StrategyUnit, len(mst.StrategiesRules)),
+		id:         id,
+		compareFn:  judger.NewCompareFunc(op),
+		rightValue: rightValue,
+	}
+	if mst.strategies, err = parseRulesToStrategy(mst.StrategiesRules); err != nil {
+		return nil, err
+	}
+	for _, st := range mst.strategies {
 		unit, err := judger.NewUnit(st)
 		if err != nil {
 			log.Warn("new-unit-error", "error", err, "st", st)
@@ -51,7 +155,7 @@ func NewMultiUnit(id int, mst *MultiStrategy) *MultiUnit {
 		mu.metrics = append(mu.metrics, st.Metric)
 	}
 	mu.metrics = utils.StringSliceUnique(mu.metrics)
-	return mu
+	return mu, nil
 }
 
 // Accept checks metric to accepting
@@ -91,15 +195,17 @@ func (mu *MultiUnit) Check(key string, metric *models.Metric) {
 		}
 		groupHash += tag + "-"
 	}
+	groupHash = strings.TrimRight(groupHash, "-")
+	groupHash = fmt.Sprintf("%d~%s", mu.id, groupHash)
 	leftValue, status, err := unit.Check(metric, groupHash)
 	if err != nil {
 		log.Warn("check-error", "metric", metric.Name, "id", mu.id, "err", err)
 		return
 	}
-	metricHash := fmt.Sprintf("%d~%s~%s", mu.id, groupHash, metric.Name)
-	metricValueHash := metricHash + "~" + metric.Hash()
+	metricHash := fmt.Sprintf("%s~%s", groupHash, metric.Name)
+	metricValueHash := metric.Name + "~" + metric.Hash()
 	if status == models.EventProblem {
-		item := &eventItem{
+		item := &ScoreItem{
 			Metric:          metric,
 			MultiStrategyID: mu.id,
 			GroupHash:       groupHash,
@@ -107,13 +213,13 @@ func (mu *MultiUnit) Check(key string, metric *models.Metric) {
 			MetricValueHash: metricValueHash,
 			LeftValue:       leftValue,
 			Score:           unit.Score(),
-			Strategy:        unit.GetStrategy(),
+			strategy:        unit.GetStrategy(),
 		}
 		setEventItem(item)
-		log.Debug("set-event", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
+		log.Debug("set", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
 	} else {
 		if removeEventItem(mu.id, groupHash, metricValueHash) {
-			log.Debug("remove-event", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
+			log.Debug("remove", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
 		}
 		// tryRemoveProblem(problemKey)
 	}

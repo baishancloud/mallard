@@ -17,9 +17,9 @@ func SetStrategies(mstList map[int]*MultiStrategy) {
 	unitsLock.Lock()
 	accepts := make(map[string][]int)
 	for id, ss := range mstList {
-		mu := NewMultiUnit(id, ss)
-		if mu == nil {
-			log.Warn("new-munit-nil", "id", id)
+		mu, err := NewMultiUnit(id, ss)
+		if err != nil || mu == nil {
+			log.Warn("new-munit-error", "id", id, "error", err)
 			continue
 		}
 		units[id] = mu

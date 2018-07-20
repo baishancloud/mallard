@@ -13,6 +13,9 @@ const DefaultExpireDuration = 10
 
 // RunClean runs cleaning tasks
 func RunClean() {
+	if writingDir == "" {
+		return
+	}
 	go autoClose()
 	go autoClean()
 }

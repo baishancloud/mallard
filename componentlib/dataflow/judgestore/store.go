@@ -42,6 +42,10 @@ var (
 
 // SetDir sets directory to store
 func SetDir(dir string) {
+	if dir == "" {
+		log.Warn("empty-dir")
+		return
+	}
 	writingDir = dir
 	log.Info("set-dir", "dir", dir)
 	os.MkdirAll(dir, os.ModePerm)
@@ -61,6 +65,9 @@ func Close() {
 
 // Write writes values
 func Write(value interface{}) {
+	if writingDir == "" {
+		return
+	}
 	/*if data, ok := value.([]byte); ok {
 		return f.WriteRaw(data)
 	}
@@ -78,6 +85,9 @@ func storeKey(ms *models.Metric) string {
 
 // WriteMetrics writes metrics to log files
 func WriteMetrics(metrics []*models.Metric) {
+	if writingDir == "" {
+		return
+	}
 	if atomic.LoadInt64(&writingStopFlag) > 0 {
 		return
 	}
