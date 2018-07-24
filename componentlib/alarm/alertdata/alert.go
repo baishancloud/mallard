@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
+	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 )

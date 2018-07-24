@@ -3,7 +3,7 @@ package alertprocess
 import (
 	"sync"
 
-	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
+	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/zaplog"

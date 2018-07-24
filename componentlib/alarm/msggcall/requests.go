@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
-	"github.com/baishancloud/mallard/componentlib/compute/sqldata"
+	"github.com/baishancloud/mallard/componentlib/center/sqldata"
+	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/utils"
 )

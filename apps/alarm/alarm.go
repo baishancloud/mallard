@@ -7,7 +7,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/alarm/alertdata"
 	"github.com/baishancloud/mallard/componentlib/alarm/alertprocess"
 	"github.com/baishancloud/mallard/componentlib/alarm/msggcall"
-	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
+	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
