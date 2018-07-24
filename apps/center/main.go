@@ -11,7 +11,6 @@ import (
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
-	"github.com/baishancloud/mallard/extralib/etcdapi"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
@@ -69,17 +68,7 @@ func main() {
 
 	go expvar.PrintAlways("mallard2_center_perf", cfg.PerfFile, time.Minute)
 
-	etcdapi.MustSetClient(cfg.EtcdAddr, cfg.EtcdUser, cfg.EtcdPassword, time.Second*10)
-	etcdapi.Register(etcdapi.Service{
-		Name:      "mallard2-center",
-		Endpoint:  utils.HostName(),
-		Version:   version,
-		BuildTime: BuildTime,
-	}, cfg, time.Second*10)
-
 	osutil.Wait()
-
-	etcdapi.Deregister()
 
 	httputil.Close()
 	pdb.Close()

@@ -5,6 +5,7 @@ import (
 )
 
 type (
+	// UserInfo is user info
 	UserInfo struct {
 		ID     int    `db:"id" json:"id"`
 		Name   string `db:"name" json:"name,omitempty"`
@@ -15,6 +16,7 @@ type (
 		QQ     string `db:"qq" json:"qq,omitempty"`
 		Role   int    `db:"role" json:"role,omitempty"`
 	}
+	// UserStatus is alarm status for user and one strategy
 	UserStatus struct {
 		UserID       int    `db:"user_id" json:"user_id,omitempty"`
 		StrategyID   int    `db:"strategy_id" json:"strategy_id,omitempty"`
@@ -26,6 +28,7 @@ type (
 		UserName     string `db:"-" json:"user_name,omitempty"`
 		UserNameCN   string `db:"-" json:"user_name_cn,omitempty"`
 	}
+	// OuterUserInfo is info of outer users, not registered or employee
 	OuterUserInfo struct {
 		ID          int    `db:"id" json:"id"`
 		Name        string `db:"name" json:"name,omitempty"`
@@ -36,26 +39,32 @@ type (
 	}
 )
 
+// IsEnable checks the alarm status is enable,
+// if no way is set, return false
 func (a *UserStatus) IsEnable() bool {
 	return a.EmailStatus+a.PhoneStatus+a.SmsStatus+a.WechatStatus > 0
 }
 
+// Status returns alarm status list from each way
 func (a *UserStatus) Status() []int {
 	return []int{a.EmailStatus, a.WechatStatus, a.SmsStatus, a.PhoneStatus}
 }
 
 type (
+	// TeamStrategy is relation of team and one strategy
 	TeamStrategy struct {
 		TeamID     int `db:"team_id" json:"team_id"`
 		StrategyID int `db:"strategy_id" json:"strategy_id"`
 		Step       int `db:"step" json:"step,omitempty"`
 	}
+	// TeamInfo is info of one team
 	TeamInfo struct {
 		ID     int    `db:"id" json:"id"`
 		Name   string `db:"name" json:"name,omitempty"`
 		Title  string `db:"title" json:"title,omitempty"`
 		Remark string `db:"remark" json:"remark,omitempty"`
 	}
+	// TeamUserStatus is alarm status for the all users in the team
 	TeamUserStatus struct {
 		UserID       int    `db:"user_id" json:"user_id"`
 		AlarmTeamID  int    `db:"alarm_team_id" json:"alarm_team_id,omitempty"`
@@ -71,6 +80,7 @@ type (
 	}
 )
 
+// IsInTime checks whether the time is in range for the team to alarm
 func (a *TeamUserStatus) IsInTime(t int64) bool {
 	if a.StartTime == 0 || a.EndTime == 0 {
 		return true
@@ -85,6 +95,7 @@ func (a *TeamUserStatus) IsInTime(t int64) bool {
 }
 
 type (
+	// DutyInfo is info for once duty
 	DutyInfo struct {
 		ID        int    `db:"id" json:"id"`
 		Cname     string `db:"cname" json:"cname,omitempty"`
@@ -92,6 +103,7 @@ type (
 		BeginTime int    `db:"begin_time" json:"begin_time,omitempty"`
 		EndTime   int    `db:"end_time" json:"end_time,omitempty"`
 	}
+	// DutyStatus is alarm status for users in the duty
 	DutyStatus struct {
 		DutyID       int    `db:"duty_id" json:"duty_id"`
 		AlarmTeamID  int    `db:"alarm_team_id" json:"alarm_team_id,omitempty"`
@@ -107,6 +119,7 @@ type (
 	}
 )
 
+// IsInTime checks whether the time is in range for the duty to alarm
 func (duty *DutyInfo) IsInTime(t int64) bool {
 	if duty.BeginTime == duty.EndTime {
 		return false

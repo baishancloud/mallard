@@ -74,3 +74,42 @@ func ReadStrategies() (map[int]*models.Strategy, error) {
 	}
 	return strategies, nil
 }
+
+var (
+	selectExpressionSQL = "SELECT id,expression,op,right_value,max_step,priority,note FROM expression ORDER BY id ASC"
+)
+
+// ReadExpressions reads all expressions as map
+func ReadExpressions() (map[int]*models.Expression, error) {
+	rows, err := portalDB.Queryx(selectExpressionSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		exps  = make(map[int]*models.Expression)
+		count int
+	)
+	for rows.Next() {
+		var s models.Expression
+		if err = rows.StructScan(&s); err != nil {
+			log.Warn("expression-scan-error", "error", err)
+			continue
+		}
+		if s.RightValueStr == "" {
+			continue
+		}
+		rightValue, err := strconv.ParseFloat(s.RightValueStr, 64)
+		if err != nil {
+			continue
+		}
+		s.RightValue = rightValue
+		if s.ID > 0 {
+			s2 := &s
+			exps[s2.ID] = s2
+		}
+		count++
+	}
+	return exps, nil
+}

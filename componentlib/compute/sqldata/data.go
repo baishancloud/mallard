@@ -12,6 +12,7 @@ import (
 // Data is all data to maintains sqldata
 type Data struct {
 	Strategies   map[int]*models.Strategy    `json:"strategies,omitempty"`
+	Expressions  map[int]*models.Expression  `json:"expressions,omitempty"`
 	Templates    map[int]*models.Template    `json:"templates,omitempty"`
 	AlarmActions map[int]*models.AlarmAction `json:"alarm_actions,omitempty"`
 
@@ -172,6 +173,14 @@ func StrategiesAll() map[int]*models.Strategy {
 		return nil
 	}
 	return cachedData.Strategies
+}
+
+// ExpressionsAll gets all expressions
+func ExpressionsAll() map[int]*models.Expression {
+	if cachedData == nil {
+		return nil
+	}
+	return cachedData.Expressions
 }
 
 // TemplatesAll gets all templates

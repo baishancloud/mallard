@@ -46,6 +46,11 @@ func Read() (*Data, error) {
 	}
 	log.Debug("read-strategies", "strategies", len(data.Strategies))
 
+	if data.Expressions, err = ReadExpressions(); err != nil {
+		return nil, err
+	}
+	log.Debug("read-expressions", "expressions", len(data.Expressions))
+
 	if data.GroupPlugins, err = ReadGroupPlugins(); err != nil {
 		return nil, err
 	}
