@@ -2,10 +2,12 @@ package main
 
 import (
 	"runtime"
+	"time"
 
 	"github.com/baishancloud/mallard/componentlib/dataflow/influxdb"
 	"github.com/baishancloud/mallard/componentlib/dataflow/puller"
-	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/container"
+	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
@@ -60,12 +62,17 @@ func main() {
 
 	go http.ListenAndServe("127.0.0.1:49999", nil)
 
-	channel := make(chan []*models.Metric, 1e6)
-	influxdb.SetCluster(cOpt)
-	go influxdb.Process(channel)
+	queue := container.NewLimitedList(1e7)
 
-	puller.SetChan(channel)
+	influxdb.SetCluster(cOpt)
+	go influxdb.Process(queue)
+	go influxdb.SyncExpvars(time.Minute, cfg.StatInfluxdbFile)
+
+	puller.SetQueue(queue)
 	puller.SetURLs(transferCfg.URLs, transferCfg.PullConcurrent)
+	go puller.SyncExpvars(time.Minute, cfg.StatPullerFile)
+
+	go expvar.PrintAlways("mallard2_store_perf", cfg.PerfFile, time.Minute)
 
 	osutil.Wait()
 

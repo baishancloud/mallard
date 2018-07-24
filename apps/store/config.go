@@ -19,14 +19,16 @@ type (
 	}
 	// Config is all config
 	Config struct {
-		Debug    bool   `json:"debug,omitempty"`
-		PerfFile string `json:"perf_file,omitempty"`
+		Debug            bool   `json:"debug,omitempty"`
+		PerfFile         string `json:"perf_file,omitempty"`
+		StatPullerFile   string `json:"stat_puller_file,omitempty"`
+		StatInfluxdbFile string `json:"stat_influxdb_file,omitempty"`
 	}
 )
 
 func defaultConfig() (Config, Transfer, Influx) {
 	return Config{
-			PerfFile: "",
+			PerfFile: "performance.json",
 			Debug:    true,
 		}, Transfer{
 			PullConcurrent: 5,
