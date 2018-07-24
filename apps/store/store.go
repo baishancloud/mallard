@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/dataflow/influxdb"
-	"github.com/baishancloud/mallard/componentlib/dataflow/puller"
+	"github.com/baishancloud/mallard/componentlib/store/influxdb"
+	"github.com/baishancloud/mallard/componentlib/store/puller"
 	"github.com/baishancloud/mallard/corelib/container"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/osutil"

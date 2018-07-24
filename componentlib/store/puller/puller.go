@@ -83,6 +83,7 @@ func Stop() {
 	log.Info("stop")
 }
 
+// SyncExpvars prints exp vars
 func SyncExpvars(duration time.Duration, file string) {
 	ticker := time.NewTicker(duration)
 	defer ticker.Stop()

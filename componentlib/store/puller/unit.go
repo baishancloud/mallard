@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/dataflow/queues"
+	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
