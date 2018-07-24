@@ -2,6 +2,7 @@ package syscollector
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -38,13 +39,24 @@ var (
 // Collect runs sysycollectors , pushes metric values to channel and pushes error values to channel
 func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models.Metric, errorChan chan<- error) {
 	log.Info("init", "prefix", prefix, "interval", int(interval.Seconds()))
+
+	// print running system collector
+	keys := make([]string, 0, len(collectorFactory))
+	collectorLock.RLock()
+	for key := range collectorFactory {
+		keys = append(keys, key)
+	}
+	collectorLock.RUnlock()
+	sort.Sort(sort.StringSlice(keys))
+	log.Info("factory", "keys", keys)
+
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		if atomic.LoadUint64(&collectorStopFlag) > 0 {
 			return
 		}
-		metrics := make([]*models.Metric, 0, 50)
+		metrics := make([]*models.Metric, 0, 100)
 		collectorLock.RLock()
 		for key, factory := range collectorFactory {
 			if factory == nil {

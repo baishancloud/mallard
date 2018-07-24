@@ -11,7 +11,7 @@ const (
 )
 
 func init() {
-	registerFactory("mem", MemoryMetrics)
+	registerFactory("core.mem", MemoryMetrics)
 }
 
 // MemoryMetrics returns metric value of memory stat

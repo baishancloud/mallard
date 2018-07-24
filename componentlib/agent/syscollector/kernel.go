@@ -11,7 +11,7 @@ const (
 )
 
 func init() {
-	registerFactory("kernel", KernelMetrics)
+	registerFactory("core.kernel", KernelMetrics)
 }
 
 // KernelMetrics returns metric value of file descriptors and processes

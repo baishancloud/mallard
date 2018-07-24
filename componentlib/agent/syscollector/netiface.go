@@ -10,7 +10,7 @@ const (
 )
 
 func init() {
-	registerFactory("netiface", NetIfaceMetrics)
+	registerFactory("net.iface", NetIfaceMetrics)
 }
 
 // NetIfaceMetrics returns net stats of one iface card

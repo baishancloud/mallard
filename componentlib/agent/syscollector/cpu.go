@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	registerFactory("cpu", CPUAllMetrics)
+	registerFactory("core.cpu", CPUAllMetrics)
 }
 
 const (

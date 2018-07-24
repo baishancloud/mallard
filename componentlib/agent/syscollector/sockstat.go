@@ -10,7 +10,7 @@ const (
 )
 
 func init() {
-	registerFactory("sockstat", SockstatMetrics)
+	registerFactory("net.sockstat", SockstatMetrics)
 }
 
 // SockstatMetrics is metric value of /proc/net/sockstat

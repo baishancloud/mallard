@@ -14,8 +14,8 @@ const (
 )
 
 func init() {
-	registerFactory("netstat", NetStatTCPExMetrics)
-	registerFactory("net.connetions", NetConnectionsMetrics)
+	registerFactory("net.tcpext", NetStatTCPExMetrics)
+	// registerFactory("net.connetions", NetConnectionsMetrics)
 }
 
 // NetStatTCPExMetrics is metric value of TcpEx in netstat

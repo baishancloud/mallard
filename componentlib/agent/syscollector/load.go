@@ -14,7 +14,7 @@ const (
 )
 
 func init() {
-	registerFactory("load", LoadMetrics)
+	registerFactory("core.load", LoadMetrics)
 }
 
 // LoadMetrics returns load data metrics
