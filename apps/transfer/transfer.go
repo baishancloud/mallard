@@ -14,7 +14,6 @@ import (
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 	"github.com/baishancloud/mallard/extralib/configapi"
-	"github.com/baishancloud/mallard/extralib/etcdapi"
 )
 
 var (
@@ -42,7 +41,7 @@ func main() {
 	// set center
 	configapi.SetAPI(cfg.CenterAddr)
 	configapi.SetIntervals([]string{"endpoints", "heartbeat"})
-	go configapi.Intervals(time.Second * 10)
+	go configapi.Intervals(time.Second * 20)
 
 	// set token
 	go httptoken.SyncVerifier(cfg.TokenFile, time.Second*15)
@@ -65,21 +64,11 @@ func main() {
 	transferhandler.SetQueues(mQueue, evtQueue)
 	go httputil.Listen(cfg.HTTPAddr, transferhandler.Create(cfg.IsPublic))
 
-	// connect etcd
-	etcdapi.MustSetClient([]string{"http://127.0.0.1:2379"}, "", "", time.Second)
-	etcdapi.Register(etcdapi.Service{
-		Name:      "mallard2-transfer",
-		Endpoint:  utils.HostName(),
-		Version:   "2.5.0",
-		BuildTime: "",
-	}, nil, time.Second*10)
-
 	go expvar.PrintAlways("mallard2_eventor_perf", cfg.PerfFile, time.Minute)
 
 	osutil.Wait()
 
 	httputil.Close()
-	etcdapi.Deregister()
 	eventsender.Stop()
 
 	dump(mQueue, evtQueue)
