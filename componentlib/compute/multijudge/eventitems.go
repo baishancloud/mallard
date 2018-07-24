@@ -11,6 +11,7 @@ import (
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
+	"github.com/baishancloud/mallard/extralib/configapi"
 )
 
 type (
@@ -227,10 +228,17 @@ func scanItems() []*models.Event {
 // ScanForEvents scans cached events to trigger combined-event
 func ScanForEvents(interval time.Duration) {
 	readCachedEvents()
+	var expHash string
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		<-ticker.C
+		exprList, hash := configapi.CheckExpressionsCache(expHash)
+		if hash != expHash {
+			expHash = hash
+			SetExpressions(exprList)
+			log.Info("reload-expressions", "expr", len(exprList))
+		}
 		events := scanItems()
 		if len(events) > 0 {
 

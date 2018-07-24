@@ -2,29 +2,43 @@ package multijudge
 
 import (
 	"sync"
+	"time"
 
 	"github.com/baishancloud/mallard/corelib/models"
 )
 
 var (
-	units        = make(map[int]*MultiUnit)
+	units        = make(map[int]*ExprUnit)
 	unitsLock    sync.RWMutex
 	unitsAccepts map[string][]int
 )
 
-// SetStrategies sets multi-strategies
-func SetStrategies(mstList map[int]*MultiStrategy) {
+// SetExpressions sets expression to generate unit
+func SetExpressions(exprList map[int]*models.Expression) {
+	nowUnix := time.Now().Unix()
 	unitsLock.Lock()
 	accepts := make(map[string][]int)
-	for id, ss := range mstList {
-		mu, err := NewMultiUnit(id, ss)
-		if err != nil || mu == nil {
-			log.Warn("new-munit-error", "id", id, "error", err)
-			continue
+	for id, expr := range exprList {
+		unit := units[id]
+		if unit == nil {
+			unit, err := NewExprUnit(id, expr)
+			if err != nil {
+				log.Warn("new-exprunit-error", "id", id, "error", err)
+				continue
+			}
+			units[id] = unit
 		}
-		units[id] = mu
-		for _, m := range mu.AcceptedMetrics() {
-			accepts[m] = append(accepts[m], id)
+		if unit != nil {
+			unit.lastTouchTime = nowUnix
+			for _, metric := range unit.AcceptedMetrics() {
+				accepts[metric] = append(accepts[metric], id)
+			}
+		}
+	}
+	for id, unit := range units {
+		if unit.lastTouchTime != nowUnix {
+			log.Warn("exprunit-close", "id", id)
+			delete(units, id)
 		}
 	}
 	unitsAccepts = accepts
@@ -32,7 +46,7 @@ func SetStrategies(mstList map[int]*MultiStrategy) {
 }
 
 // GetUnit gets unit by id
-func GetUnit(muID int) *MultiUnit {
+func GetUnit(muID int) *ExprUnit {
 	unitsLock.RLock()
 	defer unitsLock.RUnlock()
 	return units[muID]

@@ -14,6 +14,7 @@ import (
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
+	"github.com/baishancloud/mallard/extralib/configapi"
 )
 
 var (
@@ -38,6 +39,11 @@ func prepare() {
 func main() {
 	prepare()
 
+	// set center
+	configapi.SetAPI(cfg.Center.Addr)
+	configapi.SetIntervals([]string{"expressions", "strategies"})
+	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
+
 	queue := make(chan []*models.Metric, 1e5)
 
 	judgestore.SetDir(cfg.StoreDir)
@@ -53,7 +59,6 @@ func main() {
 	multijudge.RegisterFn(judgestore.WriteMetrics, multijudge.Judge)
 	go multijudge.Process(queue)
 	go multijudge.ScanForEvents(time.Second * 20)
-	go multijudge.ScanStrategies("multi_strategies.json")
 
 	go expvar.PrintAlways("mallard2_judge_perf", cfg.PerfFile, time.Minute)
 

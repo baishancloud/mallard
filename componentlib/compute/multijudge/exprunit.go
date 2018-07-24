@@ -1,6 +1,7 @@
 package multijudge
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -17,26 +18,8 @@ var (
 	log = zaplog.Zap("mjudge")
 )
 
-// MultiStrategy is some strategies to judge one event as score comparison
-type MultiStrategy struct {
-	ID              int      `json:"id,omitempty"`
-	StrategiesRules []string `json:"rules,omitempty"`
-	ScoreExpr       string   `json:"score_expr,omitempty"`
-	Note            string   `json:"note,omitempty"`
-	Priority        int      `json:"priority,omitempty"`
-	MaxStep         int      `json:"max_step,omitempty"`
-	Step            int      `json:"step,omitempty"`
-	Nodata          int      `json:"nodata,omitempty"`
-	RecoverNotify   int      `json:"recover_notify,omitempty"`
-	Status          int      `json:"status,omitempty"`
-
-	strategies      []*models.Strategy
-	scoreOperator   string
-	scoreRightValue float64
-}
-
-// MultiUnit is unit to handle one multi strategy
-type MultiUnit struct {
+// ExprUnit is unit to handle one multi strategy
+type ExprUnit struct {
 	units map[string]*judger.StrategyUnit
 	lock  sync.RWMutex
 
@@ -44,6 +27,8 @@ type MultiUnit struct {
 	id         int
 	compareFn  judger.CompareFunc
 	rightValue float64
+
+	lastTouchTime int64
 }
 
 var (
@@ -129,22 +114,23 @@ func parseScoreOperator(opt string) (string, float64, error) {
 	return "", 0, ErrorUnknownScoreExpr
 }
 
-// NewMultiUnit creates multi-strategy unit
-func NewMultiUnit(id int, mst *MultiStrategy) (*MultiUnit, error) {
-	op, rightValue, err := parseScoreOperator(mst.ScoreExpr)
+// NewExprUnit creates multi-strategy unit
+func NewExprUnit(id int, exp *models.Expression) (*ExprUnit, error) {
+	rules := make([]string, 0, 2)
+	if err := json.Unmarshal([]byte(exp.Expression), &rules); err != nil {
+		return nil, err
+	}
+	mu := &ExprUnit{
+		units:      make(map[string]*judger.StrategyUnit, len(rules)),
+		id:         id,
+		compareFn:  judger.NewCompareFunc(exp.Operator),
+		rightValue: exp.RightValue,
+	}
+	strategies, err := parseRulesToStrategy(rules)
 	if err != nil {
 		return nil, err
 	}
-	mu := &MultiUnit{
-		units:      make(map[string]*judger.StrategyUnit, len(mst.StrategiesRules)),
-		id:         id,
-		compareFn:  judger.NewCompareFunc(op),
-		rightValue: rightValue,
-	}
-	if mst.strategies, err = parseRulesToStrategy(mst.StrategiesRules); err != nil {
-		return nil, err
-	}
-	for _, st := range mst.strategies {
+	for _, st := range strategies {
 		unit, err := judger.NewUnit(st)
 		if err != nil {
 			log.Warn("new-unit-error", "error", err, "st", st)
@@ -160,7 +146,7 @@ func NewMultiUnit(id int, mst *MultiStrategy) (*MultiUnit, error) {
 
 // Accept checks metric to accepting
 // returns sub-strategy key and accepted status
-func (mu *MultiUnit) Accept(metric *models.Metric) (string, bool) {
+func (mu *ExprUnit) Accept(metric *models.Metric) (string, bool) {
 	mu.lock.RLock()
 	for key, unit := range mu.units {
 		if unit.Accept(metric) {
@@ -173,12 +159,12 @@ func (mu *MultiUnit) Accept(metric *models.Metric) (string, bool) {
 }
 
 // AcceptedMetrics returns accepting metrics from the unit
-func (mu *MultiUnit) AcceptedMetrics() []string {
+func (mu *ExprUnit) AcceptedMetrics() []string {
 	return mu.metrics
 }
 
 // Check checks value with sub-key
-func (mu *MultiUnit) Check(key string, metric *models.Metric) {
+func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 	mu.lock.RLock()
 	unit := mu.units[key]
 	mu.lock.RUnlock()
@@ -221,12 +207,11 @@ func (mu *MultiUnit) Check(key string, metric *models.Metric) {
 		if removeEventItem(mu.id, groupHash, metricValueHash) {
 			log.Debug("remove", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
 		}
-		// tryRemoveProblem(problemKey)
 	}
 }
 
 // CheckScore checks score with compare function
-func (mu *MultiUnit) CheckScore(leftValue float64) bool {
+func (mu *ExprUnit) CheckScore(leftValue float64) bool {
 	if mu.compareFn == nil {
 		return false
 	}
