@@ -2,6 +2,7 @@ package msggcall
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +46,7 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 	defer ticker.Stop()
 	for {
 		count++
-		slowFlag := count%3 == 0
+		slowFlag := count%2 == 0
 		now := <-ticker.C
 		nowUnix := now.Unix()
 		requestsLock.Lock()
@@ -87,6 +88,9 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 		msggWaitCount.Set(wait)
 		requestsLock.Unlock()
 		handleRequests(shouldAlarms, mergeSize)
+		if count == 100 {
+			count = 0 // reset number
+		}
 	}
 }
 
@@ -123,9 +127,10 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 			}
 		}
 		eps = utils.StringSliceUnique(eps)
+		sort.Sort(sort.StringSlice(eps))
 		onlyReq := reqs[0]
 		onlyReq.Endpoint = strings.Join(eps, ",")
-		onlyReq.Note = "【共 " + strconv.Itoa(len(reqs)) + " 条】" + strings.TrimPrefix(string(note), " ; ") + "..."
+		onlyReq.Note = "【共 " + strconv.Itoa(len(reqs)) + " 条】" + strings.TrimPrefix(string(note), ";") + "..."
 		go runMsggRequest(onlyReq.EventID, onlyReq)
 		msggMergeCount.Incr(1)
 	}
