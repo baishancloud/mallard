@@ -4,9 +4,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/dataflow/eventsender"
-	"github.com/baishancloud/mallard/componentlib/dataflow/queues"
-	"github.com/baishancloud/mallard/componentlib/httphandler/transferhandler"
+	"github.com/baishancloud/mallard/componentlib/transfer/eventsender"
+	"github.com/baishancloud/mallard/componentlib/transfer/queues"
+	"github.com/baishancloud/mallard/componentlib/transfer/transferhandler"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"

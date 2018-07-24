@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/baishancloud/mallard/componentlib/dataflow/queues"
+	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"

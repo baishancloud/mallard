@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/dataflow/queues"
+	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
