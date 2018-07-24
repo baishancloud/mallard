@@ -65,6 +65,51 @@ func strategyData(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 	log.Debug("req-strategies-all", "r", r.RemoteAddr, "hash", dataHash, "bytes", dataLen, "is_gzip", isGzip)
 }
 
+func expressData(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	reqStrategyCount.Incr(1)
+	dataHash := sqldata.DataHash()
+	idStr := r.FormValue("id")
+	isGzip := r.FormValue("gzip") != ""
+	if idStr == "" {
+		hash := r.FormValue("hash")
+		if hash == dataHash {
+			httputil.Response304(rw, r)
+			return
+		}
+	}
+	exps := sqldata.ExpressionsAll()
+	if len(exps) == 0 {
+		httputil.Response404(rw, r)
+		return
+	}
+	if idStr != "" {
+		id, _ := strconv.Atoi(idStr)
+		if id == 0 {
+			httputil.Response404(rw, r)
+			return
+		}
+		ss := exps[id]
+		if ss == nil {
+			httputil.Response404(rw, r)
+			return
+		}
+		dataLen, err := httputil.ResponseJSON(rw, ss, isGzip, false)
+		if err != nil {
+			httputil.ResponseFail(rw, r, err)
+			return
+		}
+		log.Debug("req-expression-one", "r", r.RemoteAddr, "id", idStr, "bytes", dataLen, "is_gzip", isGzip)
+		return
+	}
+	rw.Header().Set("Content-Hash", dataHash)
+	dataLen, err := httputil.ResponseJSON(rw, exps, isGzip, false)
+	if err != nil {
+		httputil.ResponseFail(rw, r, err)
+		return
+	}
+	log.Debug("req-expression-all", "r", r.RemoteAddr, "hash", dataHash, "bytes", dataLen, "is_gzip", isGzip)
+}
+
 func templateData(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	reqTemplateCount.Incr(1)
 	dataHash := sqldata.DataHash()

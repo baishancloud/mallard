@@ -35,6 +35,7 @@ func Handlers() http.Handler {
 	r.GET("/api/alarm/team", alarmsTeam)
 
 	r.GET("/api/strategy", strategyData)
+	r.GET("/api/expression", expressData)
 	r.GET("/api/template", templateData)
 	r.GET("/api/group_plugin", groupPluginsData)
 
