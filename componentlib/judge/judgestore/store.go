@@ -8,7 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/baishancloud/mallard/componentlib/dataflow/judgestore/filter"
+	"github.com/baishancloud/mallard/componentlib/judge/judgestore/filter"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/zaplog"

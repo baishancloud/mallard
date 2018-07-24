@@ -3,7 +3,7 @@ package judgehandler
 import (
 	"net/http"
 
-	"github.com/baishancloud/mallard/componentlib/compute/multijudge"
+	"github.com/baishancloud/mallard/componentlib/judge/multijudge"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/julienschmidt/httprouter"
 )
