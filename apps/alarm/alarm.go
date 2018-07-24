@@ -4,16 +4,15 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/compute/alertdata"
-	"github.com/baishancloud/mallard/componentlib/compute/alertprocess"
+	"github.com/baishancloud/mallard/componentlib/alarm/alertdata"
+	"github.com/baishancloud/mallard/componentlib/alarm/alertprocess"
+	"github.com/baishancloud/mallard/componentlib/alarm/msggcall"
 	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 	"github.com/baishancloud/mallard/extralib/configapi"
-	"github.com/baishancloud/mallard/extralib/etcdapi"
-	"github.com/baishancloud/mallard/extralib/msggcall"
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -89,22 +88,12 @@ func main() {
 
 	go expvar.PrintAlways("mallard2_alarm_perf", cfg.PerfFile, time.Minute)
 
-	etcdapi.MustSetClient(cfg.EtcdAddr, cfg.EtcdUser, cfg.EtcdPassword, time.Second*10)
-	etcdapi.Register(etcdapi.Service{
-		Name:      "mallard2-alarm",
-		Endpoint:  utils.HostName(),
-		Version:   version,
-		BuildTime: BuildTime,
-	}, cfg, time.Second*10)
-
 	osutil.Wait()
 
 	redisdata.StopPop()
 	redisCli.Close()
 
 	alertdata.DumpProblems(cfg.AlarmsDumpFile)
-
-	etcdapi.Deregister()
 
 	log.Sync()
 }

@@ -5,10 +5,6 @@ type config struct {
 	RedisAddr  string `json:"redis_addr"`
 	DbDSN      string `json:"db_dsn"`
 
-	EtcdAddr     []string `json:"etcd_addr"`
-	EtcdUser     string   `json:"etcd_user"`
-	EtcdPassword string   `json:"etcd_password"`
-
 	HighQueues []string `json:"high_queues"`
 	LowQueues  []string `json:"low_queues"`
 
