@@ -5,8 +5,8 @@ import (
 
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/pprofwrap"
 	"github.com/baishancloud/mallard/corelib/zaplog"
-	"github.com/baishancloud/mallard/extralib/pprofwrap"
 	"github.com/julienschmidt/httprouter"
 )
 

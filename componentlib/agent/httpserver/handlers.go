@@ -11,7 +11,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/agent/transfer"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
-	"github.com/baishancloud/mallard/extralib/pprofwrap"
+	"github.com/baishancloud/mallard/corelib/pprofwrap"
 	"github.com/julienschmidt/httprouter"
 )
 
