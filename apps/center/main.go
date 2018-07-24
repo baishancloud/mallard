@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/compute/sqldata"
-	"github.com/baishancloud/mallard/componentlib/httphandler/centerhandler"
+	"github.com/baishancloud/mallard/componentlib/center/centerhandler"
+	"github.com/baishancloud/mallard/componentlib/center/sqldata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/osutil"
