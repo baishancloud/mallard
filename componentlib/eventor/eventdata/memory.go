@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
+	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/models"
 )
 

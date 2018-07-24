@@ -4,9 +4,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/compute/eventdata"
-	"github.com/baishancloud/mallard/componentlib/compute/redisdata"
-	"github.com/baishancloud/mallard/componentlib/httphandler/eventorhandler"
+	"github.com/baishancloud/mallard/componentlib/eventor/eventdata"
+	"github.com/baishancloud/mallard/componentlib/eventor/eventorhandler"
+	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/osutil"

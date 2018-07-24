@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/baishancloud/mallard/componentlib/compute/sqldata"
+	"github.com/baishancloud/mallard/componentlib/center/sqldata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"

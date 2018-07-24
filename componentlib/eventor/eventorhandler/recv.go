@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/baishancloud/mallard/componentlib/compute/eventdata"
-	"github.com/baishancloud/mallard/componentlib/dataflow/queues"
+	"github.com/baishancloud/mallard/componentlib/eventor/eventdata"
+	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"
