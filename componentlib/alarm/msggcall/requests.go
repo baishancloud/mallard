@@ -46,7 +46,7 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 	defer ticker.Stop()
 	for {
 		count++
-		slowFlag := count%2 == 0
+		slowFlag := count%3 == 0
 		now := <-ticker.C
 		nowUnix := now.Unix()
 		requestsLock.Lock()
@@ -97,16 +97,15 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 	mergedRequests := make(map[string][]*msggRequest)
 	for eid, req := range requests {
-		if req.Recover {
-			mergedRequests[eid] = append(mergedRequests[eid], req)
-			continue
-		}
 		idx := strings.LastIndex(eid, "_")
 		if idx < 0 {
 			mergedRequests[eid] = append(mergedRequests[eid], req)
 			continue
 		}
 		key := eid[:idx]
+		if req.Recover {
+			key += "-recover"
+		}
 		mergedRequests[key] = append(mergedRequests[key], req)
 	}
 	for key, reqs := range mergedRequests {

@@ -13,6 +13,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 )
 
 const (
@@ -82,6 +83,11 @@ var (
 	insertEventSQL = "insert into %s(eid,field_transform,func,operator,right_value,note,max_step,priority,status,endpoint,left_value,current_step,event_time,judge,pushed_tags,expression_id,strategy_id,template_id,insert_time) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 )
 
+var (
+	// MaxNoteSize is max length of note string
+	MaxNoteSize = 1024
+)
+
 // InsertEvent inserts new event
 func InsertEvent(event *models.EventFull) {
 	alertInsertCount.Incr(1)
@@ -107,6 +113,14 @@ func InsertEvent(event *models.EventFull) {
 		return
 	}
 	defer stmt.Close()
+
+	// fix note length
+	note := st.Note
+	if len(note) > MaxNoteSize {
+		note = utils.Substr(note, MaxNoteSize)
+		log.Warn("substr-note", "eid", event.ID, "note", st.Note, "to", note)
+	}
+
 	result, err := stmt.Exec(
 		event.ID,
 		st.FieldTransform,
@@ -267,7 +281,7 @@ func createTable(y, m, d int) {
 		"`func` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,\n" +
 		"`operator` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL,\n" +
 		"`right_value` varchar(64) COLLATE utf8_unicode_ci NOT NULL,\n" +
-		"`note` varchar(1024) COLLATE utf8_unicode_ci DEFAULT NULL,\n" +
+		"`note` varchar(2048) COLLATE utf8_unicode_ci DEFAULT NULL,\n" +
 		"`max_step` int(11) DEFAULT NULL,\n" +
 		"`priority` int(11) DEFAULT NULL,\n" +
 		"`status` varchar(16) COLLATE utf8_unicode_ci DEFAULT NULL,\n" +
