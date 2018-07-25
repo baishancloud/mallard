@@ -2,8 +2,7 @@
     "influxdb": {
         "urls": {
             "influxdb-02": "http://127.0.0.1:8086",
-            "influxdb-06": "http://127.0.0.1:8086",
-            "influxdb_OS-local": "http://127.0.0.1:21789"
+            "judge": "http://127.0.0.1:21789"
         },
         "db": "mallard-husky",
         "blacklist": [
@@ -81,9 +80,7 @@
     },
     "influxdb_OS": {
         "urls": {
-            "influxdb_OS-01": "http://127.0.0.1:8086",
-            "influxdb_OS-07": "http://127.0.0.1:8086",
-            "influxdb_OS-local": "http://127.0.0.1:21789"
+            "influxdb_OS-01": "http://127.0.0.1:8086"
         },
         "db": "mallard-os",
         "whitelist": [

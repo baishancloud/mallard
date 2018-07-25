@@ -36,13 +36,13 @@ func init() {
 	expvar.Register(queuePushCount, queuePushFailCount)
 }
 
-// SetQueue sets queue to handle pulling metrics
-func SetQueue(queue container.LimitedQueue) {
+// Prepare sets options to pullerxs
+func Prepare(queue container.LimitedQueue, urlList map[string]string, concurrency int) {
 	metricsQueue = queue
+	setURLs(urlList, concurrency)
 }
 
-// SetURLs sets urls to pull
-func SetURLs(urlList map[string]string, concurrency int) {
+func setURLs(urlList map[string]string, concurrency int) {
 	realURLs := make(map[string]string, len(urlList))
 	for key, url := range urlList {
 		realURLs[key] = strings.TrimSuffix(url, "/") + "/api/metric_pop"

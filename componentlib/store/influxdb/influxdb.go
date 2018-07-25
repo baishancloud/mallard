@@ -30,7 +30,7 @@ func init() {
 
 // Process processes metrics queue data to sending
 func Process(queue container.LimitedQueue) {
-	go loopQueue(queue, 2e3, time.Millisecond*100)
+	go loopQueue(queue, 2e3, time.Second*1)
 }
 
 func changeBatch(batchBase int, qLen int) int {
@@ -83,7 +83,6 @@ func loopQueue(queue container.LimitedQueue, batch int, interval time.Duration) 
 			if len(data) == 0 {
 				continue
 			}
-			log.Debug("batch", "batch", batch, "base", batchBase, "queue", queue.Len())
 			count++
 			mCount += len(data)
 
@@ -94,6 +93,7 @@ func loopQueue(queue container.LimitedQueue, batch int, interval time.Duration) 
 				}
 			}
 			queuePopCount.Incr(int64(len(metrics)))
+			log.Debug("batch", "batch", batch, "base", batchBase, "pop", len(data), "metrics", len(metrics), "queue", queue.Len())
 
 			wg.Add(1)
 			go func(ms []*models.Metric) {

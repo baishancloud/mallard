@@ -31,6 +31,6 @@ func defaultConfig() (Config, Transfer, Influx) {
 			PerfFile: "performance.json",
 			Debug:    true,
 		}, Transfer{
-			PullConcurrent: 5,
+			PullConcurrent: 2,
 		}, Influx{}
 }

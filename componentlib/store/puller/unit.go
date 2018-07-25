@@ -131,6 +131,7 @@ func (u *Unit) parseResponseMetrics(resp *http.Response) error {
 		}
 		if !metricsQueue.PushBatch(values) {
 			queuePushFailCount.Incr(int64(len(metrics)))
+			log.Warn("push-queue-fail", "datalen", len(values))
 		}
 	}
 	return nil

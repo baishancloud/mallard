@@ -68,8 +68,7 @@ func main() {
 	go influxdb.Process(queue)
 	go influxdb.SyncExpvars(time.Minute, cfg.StatInfluxdbFile)
 
-	puller.SetQueue(queue)
-	puller.SetURLs(transferCfg.URLs, transferCfg.PullConcurrent)
+	puller.Prepare(queue, transferCfg.URLs, transferCfg.PullConcurrent)
 	go puller.SyncExpvars(time.Minute, cfg.StatPullerFile)
 
 	go expvar.PrintAlways("mallard2_store_perf", cfg.PerfFile, time.Minute)
