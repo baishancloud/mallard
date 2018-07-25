@@ -76,6 +76,11 @@ func Read() (*Data, error) {
 	}
 	log.Debug("read-hosts", "names", len(data.HostNames), "infos", len(data.HostInfos), "maintains", len(data.HostMaintains))
 
+	if data.HostServices, err = ReadHostServices(); err != nil {
+		return nil, err
+	}
+	log.Debug("read-host-services", "services", len(data.HostServices))
+
 	if data.UserInfos, err = ReadUserInfo(); err != nil {
 		return nil, err
 	}

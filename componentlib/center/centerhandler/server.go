@@ -27,6 +27,8 @@ func Handlers() http.Handler {
 	r.GET("/api/endpoint/maintain", endpointMaintain)
 	r.GET("/api/endpoint/info", endpointsOneInfo)
 
+	r.GET("/api/host/services", hostServices)
+
 	r.GET("/api/alarm", alarmsAllData)
 	r.GET("/api/alarm/all", alarmsAllData)
 	r.GET("/api/alarm/request", alarmsOneRequest)

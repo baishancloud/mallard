@@ -61,3 +61,18 @@ type EndpointHeartbeat struct {
 	Remote        string `json:"rmt,omitempty"`
 	Endpoint      string `json:"ep,omitempty"`
 }
+
+// HostService is service info
+type HostService struct {
+	Hostname       string `json:"hostname,omitempty" db:"hostname"`
+	ServiceName    string `json:"service_name,omitempty" db:"service_name"`
+	ServiceVersion string `json:"service_version,omitempty" db:"service_version"`
+	ServiceBuild   string `json:"service_build,omitempty" db:"service_build"`
+	CreatedAt      int64  `json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt      int64  `json:"updated_at,omitempty" db:"updated_at"`
+}
+
+// Key returns unique key for the service
+func (hs HostService) Key() string {
+	return hs.Hostname + "." + hs.ServiceName
+}

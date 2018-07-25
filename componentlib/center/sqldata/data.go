@@ -21,10 +21,11 @@ type Data struct {
 	GroupTemplates map[int][]int    `json:"group_templates,omitempty"`
 	GroupNames     map[int]string   `json:"group_names,omitempty"`
 
-	HostNames     map[int]string           `json:"host_names,omitempty"`
-	HostInfos     map[string]string        `json:"-"`
-	HostLiveInfos map[string][]interface{} `json:"-"`
-	HostMaintains map[string]int64         `json:"host_maintains,omitempty"`
+	HostNames     map[int]string                 `json:"host_names,omitempty"`
+	HostInfos     map[string]string              `json:"-"`
+	HostLiveInfos map[string][]interface{}       `json:"-"`
+	HostMaintains map[string]int64               `json:"host_maintains,omitempty"`
+	HostServices  map[string]*models.HostService `json:"-"`
 
 	UserInfos      map[int]*models.UserInfo      `json:"user_infos,omitempty"`
 	TeamInfos      map[int]*models.TeamInfo      `json:"team_infos,omitempty"`
@@ -213,4 +214,12 @@ func HostInfosAll() map[string][]interface{} {
 		return nil
 	}
 	return cachedData.HostLiveInfos
+}
+
+// HostServices returns host services
+func HostServices() map[string]*models.HostService {
+	if cachedData == nil {
+		return nil
+	}
+	return cachedData.HostServices
 }

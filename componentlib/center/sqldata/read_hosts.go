@@ -3,6 +3,8 @@ package sqldata
 import (
 	"strings"
 	"time"
+
+	"github.com/baishancloud/mallard/corelib/models"
 )
 
 var (
@@ -109,4 +111,30 @@ func ReadHosts() (map[int]string, map[string]string, map[string]int64, map[strin
 		count++
 	}
 	return hostName, hostInfo, hostMaintain, hostLiveInfo, nil
+}
+
+var (
+	selectHostServiceSQL = "SELECT hostname,service_name,service_version,service_build,created_at,updated_at FROM host_service ORDER BY service_name ASC"
+)
+
+// ReadHostServices query hosts services
+func ReadHostServices() (map[string]*models.HostService, error) {
+	rows, err := portalDB.Queryx(selectHostServiceSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	svcList := make(map[string]*models.HostService)
+	for rows.Next() {
+		svc := new(models.HostService)
+		if err = rows.StructScan(svc); err != nil {
+			continue
+		}
+		key := svc.Key()
+		if key != "" {
+			svcList[key] = svc
+		}
+	}
+	return svcList, nil
 }
