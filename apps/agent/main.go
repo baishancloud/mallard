@@ -51,7 +51,12 @@ func main() {
 	errorQueue := make(chan error, 2e3)
 
 	transfer.SetURLs(cfg.Transfer.FullURLs(serverinfo.Hostname()), cfg.Transfer.APIs)
-	go transfer.SyncConfig(time.Second*time.Duration(cfg.Transfer.ConfigInterval), func(epData *models.EndpointData, isUpdate bool) {
+	configSyncOpt := transfer.SyncOption{
+		Interval:  time.Second * time.Duration(cfg.Transfer.ConfigInterval),
+		Version:   version,
+		BuildTime: BuildTime,
+	}
+	configSyncOpt.Func = func(epData *models.EndpointData, isUpdate bool) {
 		if isUpdate && epData.Config != nil {
 			if !cfg.DisableJudge {
 				judger.SetStrategyData(epData.Config.Strategies)
@@ -62,7 +67,8 @@ func main() {
 			syscollector.SetSystime(epData.Time)
 			log.Info("set-systime", "time", epData.Time, "now", time.Now().Unix())
 		}
-	})
+	}
+	go transfer.SyncConfig(configSyncOpt)
 	go transfer.SyncSelfInfo(cfg)
 
 	var judgeFn = func(metrics []*models.Metric) {

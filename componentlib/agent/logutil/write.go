@@ -79,7 +79,7 @@ func Write(metrics []*models.Metric) {
 	if writeFileHandler != nil {
 		writeFileHandler.Write(buf.Bytes())
 	}
-	if rand.Intn(1000)%20 == 0 {
+	if rand.Intn(10000)%300 == 0 {
 		tryRotate()
 	}
 }
@@ -103,23 +103,43 @@ var (
 
 // CleanOldRotated cleans old rotated files
 func CleanOldRotated() {
-	for i := LogCleanDays + 2; i >= 1; i-- {
+	for i := LogGzipDays; i <= LogCleanDays; i++ {
 		tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
 		filename := fmt.Sprintf(writingFileLayout, tStr)
 		if _, err := os.Stat(filename); err != nil {
+			log.Debug("gzip-miss-file", "file", filename)
 			continue
 		}
-		if i >= LogCleanDays {
-			os.Remove(filename)
-			log.Info("do-remove", "file", filename)
-			continue
+		gzFile := filename + ".gz"
+		exec.Command("tar", "-czf", gzFile, filename).Run()
+		os.Remove(filename)
+		log.Info("do-gzip", "file", filename)
+	}
+	i := LogCleanDays
+	// clean json files
+	for {
+		i++
+		tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
+		filename := fmt.Sprintf(writingFileLayout, tStr)
+		if _, err := os.Stat(filename); err != nil {
+			log.Debug("remove-miss-file", "file", filename)
+			break
 		}
-		if i >= LogGzipDays {
-			gzFile := filename + ".gz"
-			exec.Command("tar", "-czf", gzFile, filename).Run()
-			os.Remove(filename)
-			log.Info("do-gzip", "file", filename)
-			continue
+		os.Remove(filename)
+		log.Info("do-remove", "file", filename)
+		continue
+	}
+	// clean gzip files
+	for {
+		i++
+		tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
+		filename := fmt.Sprintf(writingFileLayout+".gz", tStr)
+		if _, err := os.Stat(filename); err != nil {
+			log.Debug("remove-miss-file", "file", filename)
+			break
 		}
+		os.Remove(filename)
+		log.Info("do-remove", "file", filename)
+		continue
 	}
 }

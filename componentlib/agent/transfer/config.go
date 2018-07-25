@@ -27,13 +27,20 @@ func init() {
 	expvar.Register(configFailCount, configReqCount, configChangeCount)
 }
 
+type SyncOption struct {
+	Interval  time.Duration
+	Version   string
+	BuildTime string
+	Func      func(data *models.EndpointData, isUpdate bool)
+}
+
 // SyncConfig starts config data syncing
-func SyncConfig(interval time.Duration, fn func(data *models.EndpointData, isUpdate bool)) {
-	ticker := time.NewTicker(interval)
+func SyncConfig(opt SyncOption) {
+	ticker := time.NewTicker(opt.Interval)
 	defer ticker.Stop()
 	func() {
 		for {
-			epData, err := getConfig()
+			epData, err := getConfig(opt)
 			if err != nil {
 				log.Warn("req-config-fail", "error", err)
 			} else {
@@ -44,8 +51,8 @@ func SyncConfig(interval time.Duration, fn func(data *models.EndpointData, isUpd
 					isUpdate = true
 					configChangeCount.Incr(1)
 				}
-				if fn != nil {
-					fn(cacheEpData, isUpdate)
+				if opt.Func != nil {
+					opt.Func(cacheEpData, isUpdate)
 				}
 			}
 			<-ticker.C
@@ -53,7 +60,7 @@ func SyncConfig(interval time.Duration, fn func(data *models.EndpointData, isUpd
 	}()
 }
 
-func getConfig() (*models.EndpointData, error) {
+func getConfig(opt SyncOption) (*models.EndpointData, error) {
 	if atomic.LoadInt64(&stopFlag) > 0 {
 		log.Warn("config-stopped")
 		return cacheEpData, nil
@@ -64,10 +71,11 @@ func getConfig() (*models.EndpointData, error) {
 		resp     *http.Response
 		duration time.Duration
 		m        = map[string]string{
-			"Agent-Version":  "version",
-			"Agent-Plugin":   plugins.Version(),
-			"Agent-IP":       serverinfo.IP(),
-			"Agent-Endpoint": serverinfo.Hostname(),
+			"Agent-Version":   opt.Version,
+			"Agent-Buildtime": opt.BuildTime,
+			"Agent-Plugin":    plugins.Version(),
+			"Agent-IP":        serverinfo.IP(),
+			"Agent-Endpoint":  serverinfo.Hostname(),
 		}
 	)
 	svrInfo := serverinfo.Cached()

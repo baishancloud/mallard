@@ -8,6 +8,6 @@ import (
 
 func TestCollector(t *testing.T) {
 	Convey("collector", t, func() {
-		So(collectorFactory, ShouldHaveLength, 15)
+		So(collectorFactory, ShouldHaveLength, 14)
 	})
 }
