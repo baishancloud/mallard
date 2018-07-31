@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	version    = "2.5.1"
+	version    = "2.5.2"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("eventor")
@@ -51,7 +51,7 @@ func main() {
 	}
 
 	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetIntervals([]string{"strategies", "endpoints"})
+	configapi.SetIntervals([]string{"strategies", "endpoints", "expressions"})
 	go configapi.Intervals(time.Minute)
 
 	redisdata.SetClient(queueCli, cacheCli)

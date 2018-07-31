@@ -59,7 +59,7 @@ func scanNodataOnce() {
 			ID:       "nodata_" + eid,
 			Time:     now,
 			Status:   models.EventOk,
-			Strategy: getStrategyID(eid),
+			Strategy: models.GetJudgeUnitID(eid),
 			Endpoint: rawEvent.Endpoint,
 		}
 		log.Debug("scan-nodata", "eid", eid, "diff", diff)

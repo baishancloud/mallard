@@ -42,6 +42,30 @@ func (e *Event) Simple() *Event {
 	}
 }
 
+// JudgeUnitID gets strategy or expression id from fields or eid
+func (e *Event) JudgeUnitID() int {
+	if e.Strategy > 0 {
+		return e.Strategy
+	}
+	if e.Expression > 0 {
+		return e.Expression
+	}
+	return GetJudgeUnitID(e.ID)
+}
+
+// GetJudgeUnitID gets strategy or expression id from eid
+func GetJudgeUnitID(eid string) int {
+	if strings.HasPrefix(eid, "s_") || strings.HasPrefix(eid, "e_") {
+		sl := strings.Split(eid, "_")
+		if len(sl) < 3 {
+			return 0
+		}
+		v, _ := strconv.Atoi(sl[1])
+		return v
+	}
+	return 0
+}
+
 // EventStatus is status code for event
 type EventStatus int
 

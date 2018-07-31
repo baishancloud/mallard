@@ -79,7 +79,7 @@ func generateOutdatedAvaible(eid string, tUnix int64) *models.Event {
 	var isAvaible bool
 	ep := configapi.EndpointConfig(endpoint)
 	if ep != nil {
-		if sid := getStrategyID(eid); sid > 0 {
+		if sid := models.GetJudgeUnitID(eid); sid > 0 {
 			if ep.IsUsingStrategy(sid) {
 				isAvaible = true
 			}

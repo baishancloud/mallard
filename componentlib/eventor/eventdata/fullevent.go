@@ -4,30 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"html/template"
-	"strconv"
 	"strings"
 
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/extralib/configapi"
 )
 
-func getStrategyID(eid string) int {
-	if strings.HasPrefix(eid, "s_") {
-		sl := strings.Split(eid, "_")
-		if len(sl) < 3 {
-			return 0
-		}
-		v, _ := strconv.Atoi(sl[1])
-		return v
-	}
-	return 0
-}
-
 var (
 	// ErrStrategyIDZero means startegy id is 0
 	ErrStrategyIDZero = errors.New("strategy-id-zero")
 	// ErrStrategyNil means strategy value is nil
 	ErrStrategyNil = errors.New("strategy-nil")
+	// ErrExpressionNil means expression value is nil
+	ErrExpressionNil = errors.New("expression-nil")
 )
 
 // Convert converts simple event to full event with strategy info
@@ -44,15 +33,12 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 	}
 	var err error
 	if fillStrategy {
-		strategyID := event.Strategy
-		if strategyID < 1 {
-			strategyID = getStrategyID(event.ID)
-		}
-		if strategyID == 0 {
+		judgeUnitID := event.JudgeUnitID()
+		if judgeUnitID == 0 {
 			return nil, "", ErrStrategyIDZero
 		}
 		if strings.HasPrefix(event.ID, "s_") || strings.HasPrefix(event.ID, "nodata_s_") {
-			st := configapi.GetStrategyByID(strategyID)
+			st := configapi.GetStrategyByID(judgeUnitID)
 			if st == nil {
 				return nil, "", ErrStrategyNil
 			}
@@ -67,6 +53,20 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 				evt.PushedTags["strategy_tags"] = strings.Join(st2.MarkTags, ",")
 			}
 			return evt, st2.Note, err
+		}
+		if strings.HasPrefix(event.ID, "e_") {
+			exp := configapi.GetExpressionByID(judgeUnitID)
+			if exp == nil {
+				return nil, "", ErrExpressionNil
+			}
+			exp2 := new(models.Expression)
+			*exp2 = *exp
+			exp2.Note, err = renderEventNote(exp2.Note, evt)
+			if err != nil {
+				return nil, "", err
+			}
+			evt.Strategy = exp2
+			return evt, exp2.Note, err
 		}
 	}
 	return evt, "", nil
