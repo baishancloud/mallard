@@ -104,6 +104,7 @@ EOF
                 cp $KEY-config.json config.json
             else
                 cp $realCfgDir/$KEY-config.json config.json
+                echo "use real-config $realCfgDir/$KEY-config.json"
             fi 
 
             # run rpm build
