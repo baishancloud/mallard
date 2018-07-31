@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/baishancloud/mallard/componentlib/agent/transfer"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
@@ -58,17 +60,24 @@ type ScoreResult struct {
 	Total      float64
 	Scores     map[string]float64
 	LeftValues map[string]float64
+	Tags       map[string]map[string]string
+	Fields     map[string]map[string]interface{}
 }
 
 // Scan scans the items to generate score result
 func (ei *ScoreItems) Scan() ScoreResult {
 	scores := make(map[string]float64)
 	leftValues := make(map[string]float64)
+	tags := make(map[string]map[string]string)
+	fields := make(map[string]map[string]interface{})
+
 	ei.lock.RLock()
 	for _, item := range ei.Items {
 		if item.Score > scores[item.MetricHash] {
 			scores[item.MetricHash] = item.Score
 			leftValues[item.MetricHash] = item.LeftValue
+			tags[item.Metric.Name] = item.Metric.Tags
+			fields[item.Metric.Name] = item.Metric.Fields
 		}
 	}
 	ei.lock.RUnlock()
@@ -80,6 +89,8 @@ func (ei *ScoreItems) Scan() ScoreResult {
 		Total:      total,
 		Scores:     scores,
 		LeftValues: leftValues,
+		Tags:       tags,
+		Fields:     fields,
 	}
 }
 
@@ -187,11 +198,11 @@ func scanItems() []*models.Event {
 	var count int
 	var nowUnix = time.Now().Unix()
 	var events []*models.Event
-	for muID, group := range cachedEvents {
-		unit := GetUnit(muID)
+	for expID, group := range cachedEvents {
+		unit := GetUnit(expID)
 		if unit == nil {
-			log.Warn("remove-nil-unit", "muid", muID)
-			delete(cachedEvents, muID)
+			log.Warn("remove-nil-unit", "muid", expID)
+			delete(cachedEvents, expID)
 			continue
 		}
 		scoreResults := group.Scan()
@@ -200,14 +211,27 @@ func scanItems() []*models.Event {
 			event := &models.Event{
 				Time:       nowUnix,
 				Status:     models.EventOk,
-				Expression: muID,
-				ID:         fmt.Sprintf("e_%d_%s", muID, utils.MD5HashString(hash)),
+				Expression: expID,
+				ID:         fmt.Sprintf("e_%d_%s", expID, utils.MD5HashString(hash)),
 				LeftValue:  result.Total,
 				Fields: map[string]interface{}{
 					"total":     result.Total,
 					"score":     result.Scores,
 					"leftvalue": result.LeftValues,
 				},
+				Tags:     make(map[string]string),
+				Endpoint: strings.TrimPrefix(hash, fmt.Sprintf("%d~", expID)),
+			}
+			// fill value fields and tags
+			for k, v := range result.Fields {
+				for k2, v2 := range v {
+					event.Fields[k+"_"+k2] = v2
+				}
+			}
+			for k, v := range result.Tags {
+				for k2, v2 := range v {
+					event.Tags[k+"_"+k2] = v2
+				}
 			}
 			if trigger {
 				judgeScoreAlarmCount.Incr(1)
@@ -228,21 +252,26 @@ func scanItems() []*models.Event {
 // ScanForEvents scans cached events to trigger combined-event
 func ScanForEvents(interval time.Duration) {
 	readCachedEvents()
+
+	time.Sleep(time.Second * 5) // wait for configapi load data
+
 	var expHash string
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
-		<-ticker.C
 		exprList, hash := configapi.CheckExpressionsCache(expHash)
 		if hash != expHash {
 			expHash = hash
 			SetExpressions(exprList)
 			log.Info("reload-expressions", "expr", len(exprList))
 		}
-		events := scanItems()
-		if len(events) > 0 {
-
-		}
+		go func() {
+			events := scanItems()
+			if len(events) > 0 {
+				transfer.Events(events)
+			}
+		}()
+		<-ticker.C
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/baishancloud/mallard/componentlib/agent/transfer"
 	"github.com/baishancloud/mallard/componentlib/judge/judgehandler"
 	"github.com/baishancloud/mallard/componentlib/judge/judgestore"
 	"github.com/baishancloud/mallard/componentlib/judge/judgestore/filter"
@@ -61,6 +62,8 @@ func main() {
 	go multijudge.ScanForEvents(time.Second * 20)
 
 	go expvar.PrintAlways("mallard2_judge_perf", cfg.PerfFile, time.Minute)
+
+	transfer.SetURLs(cfg.Transfer.URLs, cfg.Transfer.APIs)
 
 	osutil.Wait()
 

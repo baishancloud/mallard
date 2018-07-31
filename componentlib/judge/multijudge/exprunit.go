@@ -182,7 +182,7 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 		groupHash += tag + "-"
 	}
 	groupHash = strings.TrimRight(groupHash, "-")
-	groupHash = fmt.Sprintf("%d~%s", mu.id, groupHash)
+	// groupHash = fmt.Sprintf("%d~%s", mu.id, groupHash)
 	leftValue, status, err := unit.Check(metric, groupHash)
 	if err != nil {
 		log.Warn("check-error", "metric", metric.Name, "id", mu.id, "err", err)
@@ -202,7 +202,7 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 			strategy:        unit.GetStrategy(),
 		}
 		setEventItem(item)
-		log.Debug("set", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
+		log.Debug("set", "expID", mu.id, "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
 	} else {
 		if removeEventItem(mu.id, groupHash, metricValueHash) {
 			log.Debug("remove", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)

@@ -17,7 +17,7 @@ var (
 func SetExpressions(exprList map[int]*models.Expression) {
 	nowUnix := time.Now().Unix()
 	unitsLock.Lock()
-	accepts := make(map[string][]int)
+
 	for id, expr := range exprList {
 		unit := units[id]
 		if unit == nil {
@@ -30,17 +30,21 @@ func SetExpressions(exprList map[int]*models.Expression) {
 		}
 		if unit != nil {
 			unit.lastTouchTime = nowUnix
-			for _, metric := range unit.AcceptedMetrics() {
-				accepts[metric] = append(accepts[metric], id)
-			}
 		}
 	}
+
+	accepts := make(map[string][]int)
 	for id, unit := range units {
-		if unit.lastTouchTime != nowUnix {
+		if unit.lastTouchTime > 0 && unit.lastTouchTime != nowUnix {
 			log.Warn("exprunit-close", "id", id)
 			delete(units, id)
+			continue
+		}
+		for _, metric := range unit.AcceptedMetrics() {
+			accepts[metric] = append(accepts[metric], id)
 		}
 	}
+
 	unitsAccepts = accepts
 	unitsLock.Unlock()
 }
@@ -58,15 +62,15 @@ func JudgeSingle(metric *models.Metric) {
 	ids := unitsAccepts[metric.Name]
 	if len(ids) > 0 {
 		for _, id := range ids {
-			mu := units[id]
-			if mu == nil {
+			unit := units[id]
+			if unit == nil {
 				continue
 			}
-			subKey, ok := mu.Accept(metric)
+			subKey, ok := unit.Accept(metric)
 			if !ok {
 				continue
 			}
-			mu.Check(subKey, metric)
+			unit.Check(subKey, metric)
 		}
 	}
 	unitsLock.RUnlock()
