@@ -38,6 +38,7 @@ install -d %{buildroot}/etc/logrotate.d
 install -m 755 %{_builddir}/%{package} %{buildroot}/usr/local/mallard/%{destDir}/%{appName}
 install -m 644 %{srcDir}/%{appName}-config.json %{buildroot}/usr/local/mallard/%{destDir}/config.example.json
 install -m 644 %{srcDir}/build.logrotate %{buildroot}/usr/local/mallard/%{destDir}/mallard.logrotate
+install -m 644 %{srcDir}/config.json %{buildroot}/usr/local/mallard/%{destDir}/config.json
 
 install -d %{buildroot}/etc/supervisor/conf.d/
 install -m 644 %{srcDir}/%{appName}.conf %{buildroot}/etc/supervisor/conf.d/%{appName}.conf

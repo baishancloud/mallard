@@ -71,7 +71,7 @@ EOF
         ver=$(./$KEY -v)
 
         cfgfile="$KEY""-config.json"
-        ./$KEY -dc >> $cfgfile
+        ./$KEY -dc > $cfgfile
 
         dir=$KEY
         if [ $KEY == "mallard2-agent" ]; then
@@ -88,7 +88,7 @@ autorestart = true
 user = root
 redirect_stderr = true
 stdout_logfile = /usr/local/mallard/$dir/var/app.log
-stdout_logfile_maxbytes = 200MB
+stdout_logfile_maxbytes = 1000MB
 directory = /usr/local/mallard/$dir/
 EOF
         if [ $toType == "tar.gz" ]; then
@@ -97,9 +97,19 @@ EOF
             rm -rf $KEY $KEY-config.json $KEY.conf
         fi
         if [ $toType == "rpm" ]; then
+
+             # set real config file
+            realCfgDir=$MALLARD_CFG_PATH
+            if [ -z "$realCfgDir" ]; then
+                cp $KEY-config.json config.json
+            else
+                cp $realCfgDir/$KEY-config.json config.json
+            fi 
+
+            # run rpm build
             rpmBuild $KEY $ver $dir "1" "6"
             rpmBuild $KEY $ver $dir "1" "7"
-            rm -rf $KEY $KEY-config.json $KEY.conf
+            rm -rf $KEY $KEY-config.json $KEY.conf config.json
         fi
 
         isbuild=1
