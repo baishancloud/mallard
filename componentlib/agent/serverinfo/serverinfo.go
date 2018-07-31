@@ -13,6 +13,7 @@ type (
 	// Data is info list from allconf
 	Data struct {
 		Sertypes        string `json:"sertypes,omitempty"`
+		SertypesConf    string `json:"sertypes_conf,omitempty"`
 		Cachegroup      string `json:"cachegroup,omitempty"`
 		StorageGroup    string `json:"storage_group,omitempty"`
 		IP              string `json:"ip,omitempty"`
@@ -130,7 +131,17 @@ func Sertypes() string {
 	if svrData == nil {
 		return ""
 	}
+	if svrData.Sertypes == "" {
+		return svrData.SertypesConf
+	}
 	return svrData.Sertypes
+}
+
+// SetSertypes sets sertypes
+func SetSertypes(sertypes string) {
+	if svrData != nil {
+		svrData.SertypesConf = sertypes
+	}
 }
 
 // Cachegroup returns cache group name

@@ -8,9 +8,10 @@ import (
 
 // EndpointData is object to recieve transfer's endpoint data
 type EndpointData struct {
-	Config *EndpointConfig `json:"config"`
-	Hash   string          `json:"hash"`
-	Time   int64           `json:"tfr_time"`
+	Config   *EndpointConfig `json:"config"`
+	Hash     string          `json:"hash"`
+	Time     int64           `json:"tfr_time"`
+	Sertypes string          `json:"sertypes,omitempty"`
 }
 
 // EndpointConfig is config data for one endpoint

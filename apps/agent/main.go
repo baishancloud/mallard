@@ -67,6 +67,10 @@ func main() {
 			syscollector.SetSystime(epData.Time)
 			log.Info("set-systime", "time", epData.Time, "now", time.Now().Unix())
 		}
+		if epData.Sertypes != "" {
+			serverinfo.SetSertypes(epData.Sertypes)
+			log.Info("set-sertypes", "sertypes", epData.Sertypes)
+		}
 	}
 	go transfer.SyncConfig(configSyncOpt)
 	go transfer.SyncSelfInfo(cfg)
