@@ -6,6 +6,7 @@
 *.DS_Store 
 *.dump
 *.rpm
+*.rpm.lock
 .vscode/
 **/_dump
 **/_data

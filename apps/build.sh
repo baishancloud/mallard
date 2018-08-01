@@ -107,10 +107,20 @@ EOF
                 echo "use real-config $realCfgDir/$KEY-config.json"
             fi 
 
+            rpmLockFile=$KEY.rpm.lock
+            rpmFixNumber="1"
+            if [ -f "$rpmLockFile" ]; then
+                number=`cat $rpmLockFile`
+                let number+=1
+                rpmFixNumber=$number
+            fi
+            echo "use rpm fixnumber $rpmFixNumber"
+
             # run rpm build
-            rpmBuild $KEY $ver $dir "1" "6"
-            rpmBuild $KEY $ver $dir "1" "7"
+            rpmBuild $KEY $ver $dir $rpmFixNumber "6"
+            rpmBuild $KEY $ver $dir $rpmFixNumber "7"
             rm -rf $KEY $KEY-config.json $KEY.conf config.json
+            echo $rpmFixNumber > $rpmLockFile
         fi
 
         isbuild=1
