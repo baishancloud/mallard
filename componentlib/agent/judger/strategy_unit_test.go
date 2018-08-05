@@ -113,5 +113,49 @@ func TestStrategyUnit(t *testing.T) {
 			So(leftValue, ShouldEqual, 0)
 			So(status, ShouldEqual, models.EventIgnore)
 		})
+
+		Convey("strategy.unit.queue", func() {
+			err := unit.SetStrategy(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "all(#2)",
+				Operator:       ">=",
+				RightValue:     1,
+			})
+			So(err, ShouldBeNil)
+
+			// add first data
+			_, status, err := unit.Check(&models.Metric{
+				Name:     "cpu",
+				Time:     4,
+				Value:    2,
+				Endpoint: "new-localhost",
+			}, "hash-2")
+			So(err, ShouldBeNil)
+			So(status, ShouldEqual, models.EventIgnore)
+			So(unit.dataQueue["hash-2"], ShouldHaveLength, 1)
+
+			// add second data
+			_, status, err = unit.Check(&models.Metric{
+				Name:     "cpu",
+				Time:     14,
+				Value:    2,
+				Endpoint: "new-localhost",
+			}, "hash-2")
+			So(err, ShouldBeNil)
+			So(status, ShouldEqual, models.EventProblem)
+			So(unit.dataQueue["hash-2"], ShouldHaveLength, 2)
+
+			_, status, err = unit.Check(&models.Metric{
+				Name:     "cpu",
+				Time:     14 + QueueDataExpiry + 10,
+				Value:    2,
+				Endpoint: "new-localhost",
+			}, "hash-2")
+			So(err, ShouldBeNil)
+			So(unit.dataQueue["hash-2"], ShouldHaveLength, 1)
+			So(status, ShouldEqual, models.EventIgnore)
+		})
 	})
 }

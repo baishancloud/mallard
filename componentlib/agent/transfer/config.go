@@ -27,6 +27,7 @@ func init() {
 	expvar.Register(configFailCount, configReqCount, configChangeCount)
 }
 
+// SyncOption is option to sync config from transfer
 type SyncOption struct {
 	Interval  time.Duration
 	Version   string

@@ -52,6 +52,12 @@ func (s *StrategyUnit) GetStrategy() *models.Strategy {
 	return s.st
 }
 
+var (
+	// QueueDataExpiry is expire time of data queue between nearest items,
+	// if expired, use new data as new queue, ignore old queue
+	QueueDataExpiry int64 = 3600 * 3
+)
+
 func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, customHash string) ([]*models.EventValue, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -66,7 +72,12 @@ func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, cus
 			return nil, false
 		}
 	}
-	queue = append([]*models.EventValue{historyData}, queue...)
+	if len(queue) > 0 && historyData.Time-queue[0].Time > QueueDataExpiry {
+		log.Info("queue-expired", "metric", metric.Name)
+		queue = []*models.EventValue{historyData}
+	} else {
+		queue = append([]*models.EventValue{historyData}, queue...)
+	}
 	if len(queue) < s.op.Limit() {
 		s.dataQueue[hash] = queue
 		return nil, false
