@@ -19,6 +19,10 @@ type config struct {
 	MsggMergeLevel int    `json:"msgg_merge_level"`
 	MsggTicker     int    `json:"msgg_ticker"`
 
+	MsggFileWay       string `json:"msgg_fileway"`
+	MsggFileWayExpire int64  `json:"msgg_fileway_expiry"`
+	MsggFileLayout    string `json:"msgg_fileway_layout"`
+
 	PerfFile string `json:"perf_file"`
 	Debug    bool   `json:"debug"`
 
@@ -29,19 +33,26 @@ type config struct {
 
 func defaultConfig() config {
 	return config{
-		CenterAddr:         "http://127.0.0.1:10999",
-		RedisAddr:          "127.0.0.1:6379",
-		DbDSN:              "",
-		AlarmsDumpFile:     "problems.log",
-		AlarmSubscribeKey:  "",
-		LowQueues:          []string{},
-		HighQueues:         []string{},
-		CommandFile:        "",
-		ActionFile:         "",
-		MsggFile:           "",
-		MsggMergeLevel:     3,
-		MsggMergeSize:      5,
-		MsggTicker:         5,
+		CenterAddr:        "http://127.0.0.1:10999",
+		RedisAddr:         "127.0.0.1:6379",
+		DbDSN:             "",
+		AlarmsDumpFile:    "problems.log",
+		AlarmSubscribeKey: "",
+		LowQueues:         []string{},
+		HighQueues:        []string{},
+
+		CommandFile: "",
+		ActionFile:  "",
+
+		MsggFile:       "",
+		MsggMergeLevel: 3,
+		MsggMergeSize:  5,
+		MsggTicker:     5,
+
+		MsggFileWay:       "",
+		MsggFileLayout:    "calls/alarms_%s.json",
+		MsggFileWayExpire: 3600,
+
 		Debug:              true,
 		StatMetricDuration: 1800,
 	}

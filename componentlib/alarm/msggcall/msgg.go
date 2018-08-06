@@ -21,10 +21,11 @@ var (
 	commandFile string
 	actionFile  string
 	msggFile    string
+	msggFileWay string
 )
 
 // SetFiles sets files
-func SetFiles(cmd, action, msgg string) {
+func SetFiles(cmd, action, msgg, fileway string) {
 	commandFile = cmd
 	if _, err := os.Stat(commandFile); err != nil {
 		log.Warn("stat-cmd-file-error", "error", err)
@@ -39,6 +40,11 @@ func SetFiles(cmd, action, msgg string) {
 	if _, err := os.Stat(msggFile); err != nil {
 		log.Warn("stat-msgg-file-error", "error", err)
 		msggFile = ""
+	}
+	msggFileWay = fileway
+	if _, err := os.Stat(msggFileWay); err != nil {
+		log.Warn("stat-msgg-fileway-error", "error", err)
+		msggFileWay = ""
 	}
 }
 
@@ -179,16 +185,17 @@ func AddRequests(event *models.EventFull, st *models.Strategy, isRecover bool) {
 			break
 		}
 		reqs[t] = &msggRequest{
+			Event:       event,
 			SendRequest: req,
 			Recover:     isRecover,
 			Note:        st.Note,
-			LeftValue:   event.LeftValue,
-			Endpoint:    event.Endpoint,
-			Level:       level,
-			Time:        event.EventTime,
-			Sertypes:    event.PushedTags["sertypes"],
-			Status:      event.Status,
-			EventID:     event.ID,
+			// LeftValue:   event.LeftValue,
+			Endpoint: event.Endpoint,
+			Level:    level,
+			// 	Time:        event.EventTime,
+			//	Sertypes:    event.PushedTags["sertypes"],
+			//	Status:      event.Status,
+			//	EventID:     event.ID,
 		}
 	}
 	requestsLock.Lock()

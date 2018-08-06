@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	version    = "2.5.2"
+	version    = "2.5.3"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("alarm")
@@ -57,14 +57,20 @@ func main() {
 	redisdata.SetAlarmQueues(cfg.LowQueues, cfg.HighQueues)
 	redisdata.SetAlertSubscribe(cfg.AlarmSubscribeKey)
 
-	msggcall.SetFiles(cfg.CommandFile, cfg.ActionFile, cfg.MsggFile)
+	msggcall.SetFiles(cfg.CommandFile, cfg.ActionFile, cfg.MsggFile, cfg.MsggFileWay)
+	msggcall.SetDirLayout(cfg.MsggFileLayout)
+	msggcall.CallFileExpiry = cfg.MsggFileWayExpire
 	go msggcall.ScanRequests(time.Second*time.Duration(cfg.MsggTicker), cfg.MsggMergeLevel, cfg.MsggMergeSize)
 	go msggcall.SyncPrintCount("mallard2_alarm_msgg_users", time.Hour, cfg.StatMsggUserFile)
 
 	eventCh := make(chan redisdata.EventRecord, 1e4)
 	go redisdata.Pop(eventCh, time.Second)
 
-	go http.ListenAndServe("127.0.0.1:49999", nil)
+	if cfg.Debug {
+		// run pprof when set debug
+		log.Info("start-pprof")
+		go http.ListenAndServe("127.0.0.1:49999", nil)
+	}
 
 	alertprocess.Register(redisdata.Alert, msggcall.Call)
 

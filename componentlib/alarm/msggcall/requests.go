@@ -10,20 +10,17 @@ import (
 	"github.com/baishancloud/mallard/componentlib/center/sqldata"
 	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
 )
 
 type msggRequest struct {
+	Event       *models.EventFull         `json:"event,omitempty"`
 	SendRequest *sqldata.AlarmSendRequest `json:"request,omitempty"`
 	Recover     bool                      `json:"recover,omitempty"`
 	Note        string                    `json:"note,omitempty"`
-	Endpoint    string                    `json:"endpoint,omitempty"`
-	LeftValue   float64                   `json:"left_value,omitempty"`
 	Level       int                       `json:"level,omitempty"`
-	Time        int64                     `json:"time,omitempty"`
-	Sertypes    string                    `json:"sertypes,omitempty"`
-	Status      string                    `json:"status,omitempty"`
-	EventID     string                    `json:"event_id,omitempty"`
+	Endpoint    string                    `json:"endpoint,omitempty"`
 }
 
 var (
@@ -97,6 +94,10 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 	mergedRequests := make(map[string][]*msggRequest)
 	for eid, req := range requests {
+		if req.Event == nil {
+			log.Warn("msgg-nil-event", "req", req)
+			continue
+		}
 		idx := strings.LastIndex(eid, "_")
 		if idx < 0 {
 			mergedRequests[eid] = append(mergedRequests[eid], req)
@@ -108,10 +109,12 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 		}
 		mergedRequests[key] = append(mergedRequests[key], req)
 	}
+	totalReqs := make([]*msggRequest, 0, len(requests))
 	for key, reqs := range mergedRequests {
 		if len(reqs) < mergeSize {
 			for _, req := range reqs {
-				go runMsggRequest(req.EventID, req)
+				go runMsggRequest(req.Event.ID, req)
+				totalReqs = append(totalReqs, req)
 			}
 			continue
 		}
@@ -119,7 +122,7 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 		var eps []string
 		var note []rune
 		for _, req := range reqs {
-			eps = append(eps, req.Endpoint)
+			eps = append(eps, req.Event.Endpoint)
 			if len(note) < 512 && req.Note != "" {
 				note = append(note, []rune(";")...)
 				note = append(note, []rune(req.Note)...)
@@ -130,8 +133,12 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 		onlyReq := reqs[0]
 		onlyReq.Endpoint = strings.Join(eps, ",")
 		onlyReq.Note = "【共 " + strconv.Itoa(len(reqs)) + " 条】" + strings.TrimPrefix(string(note), ";") + "..."
-		go runMsggRequest(onlyReq.EventID, onlyReq)
+		go runMsggRequest(onlyReq.Event.ID, onlyReq)
 		msggMergeCount.Incr(1)
+		totalReqs = append(totalReqs, onlyReq)
+	}
+	if len(totalReqs) > 0 {
+		CallFileWay(totalReqs)
 	}
 }
 
@@ -139,7 +146,7 @@ func runMsggRequest(eid string, msggReq *msggRequest) {
 	msggCallCount.Incr(1)
 	args := lineMsggRequest(eid, msggReq)
 	if len(args) == 0 {
-		log.Info("call-zero", "eid", eid, "status", msggReq.Status, "note", msggReq.Note)
+		log.Info("call-zero", "eid", eid, "status", msggReq.Event.Status, "note", msggReq.Note)
 		msggCallZeroCount.Incr(1)
 		return
 	}
@@ -149,7 +156,7 @@ func runMsggRequest(eid string, msggReq *msggRequest) {
 		msggCallErrorCount.Incr(1)
 		return
 	}
-	log.Info("call-msgg", "eid", eid, "status", msggReq.Status, "args", args, "output", string(output))
+	log.Info("call-msgg", "eid", eid, "status", msggReq.Event.Status, "args", args, "output", string(output))
 	go calculateUserCount(msggReq)
 }
 
@@ -157,9 +164,9 @@ func lineMsggRequest(eid string, req *msggRequest) []string {
 	s := []string{req.Note,
 		fmt.Sprint(req.Level),
 		req.Endpoint,
-		fmt.Sprint(req.LeftValue),
-		time.Unix(req.Time, 0).Format("01/02 15:04:05"),
-		req.Sertypes,
+		fmt.Sprint(req.Event.LeftValue),
+		time.Unix(req.Event.EventTime, 0).Format("01/02 15:04:05"),
+		req.Event.PushedTags["sertypes"],
 	}
 	var isLined bool
 	if len(req.SendRequest.Emails) == 0 {
