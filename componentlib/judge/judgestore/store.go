@@ -1,6 +1,7 @@
 package judgestore
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -120,11 +121,12 @@ func WriteMetrics(metrics []*models.Metric) {
 				log.Warn("encode-error", "error", err, "metric", key)
 				continue
 			}
-			if _, err := fh.File().Write(b); err != nil {
+			buf := bytes.NewBuffer(b)
+			buf.WriteString("\n")
+			if _, err := fh.File().Write(buf.Bytes()); err != nil {
 				log.Warn("write-file-error", "file", fh.Name(), "value", string(b), "error", err)
 				continue
 			}
-			fh.File().WriteString("\n")
 		}
 		// fh.Sync()
 		fh.Touch()
