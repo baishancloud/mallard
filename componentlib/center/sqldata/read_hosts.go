@@ -64,7 +64,7 @@ func ReadGroupHosts() (map[int][]int, error) {
 }
 
 var (
-	selectHostsNamesSQL = "SELECT id,hostname,ip,agent_version,plugin_version,remote_ip,maintain_begin,maintain_end,live_at FROM host ORDER BY id ASC"
+	selectHostsNamesSQL = "SELECT id,hostname,ip,agent_version,plugin_version,remote_ip,maintain_begin,maintain_end,live_at,sertypes FROM host ORDER BY id ASC"
 )
 
 // ReadHosts query host's id-name pairs
@@ -93,14 +93,15 @@ func ReadHosts() (map[int]string, map[string]string, map[string]int64, map[strin
 			maintainBegin      int64
 			maintainEnd        int64
 			liveAt             int64
+			sertypes           string
 		)
-		if err = rows.Scan(&hostID, &name, &agentIP, &agentVersion, &agentPluginVersion, &remoteIP, &maintainBegin, &maintainEnd, &liveAt); err != nil {
+		if err = rows.Scan(&hostID, &name, &agentIP, &agentVersion, &agentPluginVersion, &remoteIP, &maintainBegin, &maintainEnd, &liveAt, &sertypes); err != nil {
 			continue
 		}
 		if name != "" {
 			hostInfo[name] = strings.TrimSpace(agentIP + agentVersion + agentPluginVersion + remoteIP)
 			hostLiveInfo[name] = []interface{}{
-				agentIP, agentVersion, agentPluginVersion, remoteIP, liveAt,
+				agentIP, agentVersion, agentPluginVersion, remoteIP, liveAt, sertypes,
 			}
 		}
 		hostName[hostID] = name

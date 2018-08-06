@@ -25,7 +25,7 @@ type Data struct {
 	HostInfos     map[string]string              `json:"-"`
 	HostLiveInfos map[string][]interface{}       `json:"-"`
 	HostMaintains map[string]int64               `json:"host_maintains,omitempty"`
-	HostServices  map[string]*models.HostService `json:"-"`
+	HostServices  map[string]*models.HostService `json:"host_services,omitempty"`
 
 	UserInfos      map[int]*models.UserInfo      `json:"user_infos,omitempty"`
 	TeamInfos      map[int]*models.TeamInfo      `json:"team_infos,omitempty"`

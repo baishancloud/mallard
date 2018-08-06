@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/baishancloud/mallard/corelib/expvar"
@@ -72,4 +73,46 @@ func UpdateHeartbeat(heartbeats map[string]models.EndpointHeartbeat) {
 			log.Debug("update-heartbeat-time", "len", len(justUpdateTime), "du", du)
 		}
 	}
+}
+
+var (
+	updateHostServiceUpdatedAtSQL = "UPDATE host_service SET update_at=? WHERE hostname=? AND service_name=?"
+	updateHostServiceSQL          = "UPDATE host_service SET updated_at=?,ip=?,remote_ip=?,service_name=?,service_version=?,service_build=? WHERE hostname=? AND service_name=?"
+	insertHostServiceSQL          = "INSERT INTO host_service(hostname,ip,remote_ip,service_name,service_version,service_build,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)"
+
+	hostServicesLock sync.RWMutex
+)
+
+// UpdateHostService updates host services
+func UpdateHostService(service *models.HostService, remoteIP string) {
+	if cachedData == nil {
+		return
+	}
+	hostServicesLock.RLock()
+	defer hostServicesLock.RUnlock()
+
+	nowUnix := time.Now().Unix()
+	oldSvc := cachedData.HostServices[service.Key()]
+	if oldSvc == nil {
+		if _, err := portalDB.Exec(insertHostServiceSQL, service.Hostname, service.IP, remoteIP, service.ServiceName, service.ServiceVersion, service.ServiceBuild, nowUnix, nowUnix); err != nil {
+			log.Warn("insert-hostservice-error", "error", err, "hs", service, "remote", remoteIP)
+			return
+		}
+		log.Info("insert-hostservice", "hs", service, "remote", remoteIP)
+		return
+	}
+	if oldSvc.ValuesString() != service.ValuesString() {
+		if _, err := portalDB.Exec(updateHostServiceSQL, nowUnix, service.IP, remoteIP, service.ServiceName, service.ServiceVersion, service.ServiceBuild,
+			service.Hostname, service.ServiceName); err != nil {
+			log.Warn("update-hostservice-values-error", "error", err, "hs", service, "remote", remoteIP)
+			return
+		}
+		log.Info("update-hostservice", "hs", service, "remote", remoteIP)
+		return
+	}
+	if _, err := portalDB.Exec(updateHostServiceUpdatedAtSQL, nowUnix, service.Hostname, service.ServiceName); err != nil {
+		log.Warn("update-hostservice-error", "error", err, "hs", service, "remote", remoteIP)
+		return
+	}
+	log.Info("update-hostservice", "hs", service, "remote", remoteIP)
 }

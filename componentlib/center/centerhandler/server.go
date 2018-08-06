@@ -27,7 +27,7 @@ func Handlers() http.Handler {
 	r.GET("/api/endpoint/maintain", endpointMaintain)
 	r.GET("/api/endpoint/info", endpointsOneInfo)
 
-	r.GET("/api/host/services", hostServices)
+	r.GET("/api/host/services", hostServicesList)
 
 	r.GET("/api/alarm", alarmsAllData)
 	r.GET("/api/alarm/all", alarmsAllData)
@@ -42,6 +42,7 @@ func Handlers() http.Handler {
 	r.GET("/api/group_plugin", groupPluginsData)
 
 	r.POST("/api/ping", heartbeatHandler)
+	r.POST("/api/ping/hostservice", hostServiceHandler)
 
 	r.HandlerFunc("GET", "/debug/vars", expvar.HTTPHandler)
 

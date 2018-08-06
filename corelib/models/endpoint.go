@@ -66,6 +66,7 @@ type EndpointHeartbeat struct {
 // HostService is service info
 type HostService struct {
 	Hostname       string `json:"hostname,omitempty" db:"hostname"`
+	IP             string `json:"ip,omitempty" db:"ip"`
 	ServiceName    string `json:"service_name,omitempty" db:"service_name"`
 	ServiceVersion string `json:"service_version,omitempty" db:"service_version"`
 	ServiceBuild   string `json:"service_build,omitempty" db:"service_build"`
@@ -76,4 +77,9 @@ type HostService struct {
 // Key returns unique key for the service
 func (hs HostService) Key() string {
 	return hs.Hostname + "." + hs.ServiceName
+}
+
+// ValuesString returns all values as total string, use to compare
+func (hs HostService) ValuesString() string {
+	return hs.Hostname + hs.ServiceName + hs.ServiceVersion + hs.ServiceBuild
 }

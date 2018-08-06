@@ -215,7 +215,7 @@ func endpointsOneInfo(rw http.ResponseWriter, r *http.Request, _ httprouter.Para
 	log.Debug("req-host-info-ok", "r", r.RemoteAddr, "ep", ep, "is_gzip", isGzip)
 }
 
-func hostServices(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func hostServicesList(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	reqEndpointCount.Incr(1)
 	infos := sqldata.HostServices()
 	if len(infos) == 0 {
