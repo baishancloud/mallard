@@ -20,6 +20,7 @@ var (
 func init() {
 	expvar.Register(heartbeatSyncOnceCount)
 	registerFactory("heartbeat", syncHeartbeat)
+	registerFactory("sync-hostservice", syncHostService)
 }
 
 var (
@@ -92,4 +93,31 @@ func GetHeartbeatData(diff int64, timeRange int64) (*HeartbeatResult, error) {
 	}
 	result := new(HeartbeatResult)
 	return result, json.Unmarshal(body, result)
+}
+
+var (
+	currentHostService *models.HostService
+)
+
+// SetHostService sets host services to sync
+// only support one service in once
+func SetHostService(svc *models.HostService) {
+	currentHostService = svc
+}
+
+func syncHostService() {
+	if currentHostService == nil {
+		return
+	}
+	resp, err := httputil.PostJSON(centerAPI+"/api/ping/hostservice", time.Second*10, currentHostService)
+	if err != nil {
+		log.Warn("sync-hostservice-error", "error", err, "hs", currentHostService)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		log.Warn("sync-hostservice-bad-status", "status", resp.StatusCode)
+		return
+	}
+	log.Info("sync-hostservice-ok", "hs", currentHostService)
 }

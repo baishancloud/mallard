@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"runtime"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/alarm/msggcall"
 	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
@@ -22,10 +24,11 @@ import (
 )
 
 var (
-	version    = "2.5.3"
-	configFile = "config.json"
-	cfg        = defaultConfig()
-	log        = zaplog.Zap("alarm")
+	version     = "2.5.3"
+	configFile  = "config.json"
+	cfg         = defaultConfig()
+	log         = zaplog.Zap("alarm")
+	hostname, _ = os.Hostname()
 
 	statsDumpFile = "alarm_stats.json"
 )
@@ -50,7 +53,14 @@ func main() {
 	}
 
 	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetIntervals([]string{"alarms", "alarm-requests"})
+	configapi.SetHostService(&models.HostService{
+		Hostname:       hostname,
+		IP:             utils.LocalIP(),
+		ServiceName:    "mallard2-alarm",
+		ServiceVersion: version,
+		ServiceBuild:   BuildTime,
+	})
+	configapi.SetIntervals([]string{"alarms", "alarm-requests", "sync-hostservice"})
 	go configapi.Intervals(time.Second * 30)
 
 	redisdata.SetClient(redisCli, nil)

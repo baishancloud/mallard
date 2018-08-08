@@ -76,7 +76,7 @@ func UpdateHeartbeat(heartbeats map[string]models.EndpointHeartbeat) {
 }
 
 var (
-	updateHostServiceUpdatedAtSQL = "UPDATE host_service SET update_at=? WHERE hostname=? AND service_name=?"
+	updateHostServiceUpdatedAtSQL = "UPDATE host_service SET updated_at=? WHERE hostname=? AND service_name=?"
 	updateHostServiceSQL          = "UPDATE host_service SET updated_at=?,ip=?,remote_ip=?,service_name=?,service_version=?,service_build=? WHERE hostname=? AND service_name=?"
 	insertHostServiceSQL          = "INSERT INTO host_service(hostname,ip,remote_ip,service_name,service_version,service_build,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)"
 
