@@ -25,7 +25,7 @@ func TestCPU(t *testing.T) {
 		time.Sleep(time.Second * 2)
 		values, err := CPUCores()
 		So(err, ShouldBeNil)
-		So(values, ShouldHaveLength, runtime.NumCPU())
+		So(len(values), ShouldBeGreaterThanOrEqualTo, runtime.NumCPU())
 		fmt.Println(values)
 	})
 

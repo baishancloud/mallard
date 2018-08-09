@@ -16,7 +16,7 @@ func TestCPU(t *testing.T) {
 
 		metrics, err := CPUAllMetrics()
 		So(err, ShouldBeNil)
-		So(metrics, ShouldHaveLength, runtime.NumCPU()+2)
+		So(len(metrics), ShouldBeGreaterThanOrEqualTo, runtime.NumCPU()+2)
 
 		So(metrics[0].Name, ShouldEqual, cpuMetricName)
 		So(metrics[0].Fields, ShouldHaveLength, 12)
