@@ -1,7 +1,6 @@
 package syscollector
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -17,6 +16,5 @@ func TestSockstat(t *testing.T) {
 		So(metrics[0].Name, ShouldEqual, netSockstatMetricName)
 		So(metrics[0].Fields, ShouldHaveLength, 8)
 
-		fmt.Println(metrics)
 	})
 }

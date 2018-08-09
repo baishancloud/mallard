@@ -34,7 +34,7 @@ func SetURLs(urls []string, suffix map[string]string) {
 	urlLock.Lock()
 	urlList = realURLs
 	urlSuffix = suffix
-	urlLatency = utils.NewLatency(len(realURLs), 1e5)
+	urlLatency = utils.NewLatency(len(realURLs), 1e6)
 	log.Debug("set-urls", "urls", realURLs, "suffix", suffix)
 	urlLock.Unlock()
 }

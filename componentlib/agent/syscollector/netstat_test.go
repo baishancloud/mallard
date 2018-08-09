@@ -15,7 +15,7 @@ func TestNetSstat(t *testing.T) {
 		So(len(metrics), ShouldEqual, 1)
 
 		So(metrics[0].Name, ShouldEqual, netStatTCPExMetricName)
-		So(metrics[0].Fields, ShouldHaveLength, 117)
+		So(len(metrics[0].Fields) >= 112, ShouldBeTrue) // depends linux kernel version
 
 		fmt.Println(metrics)
 	})

@@ -56,7 +56,7 @@ func NewPlugin(file string, logFile string, info os.FileInfo) (*Plugin, error) {
 		LogFile:      logFile,
 		FileModTime:  info.ModTime().Unix(),
 		Cycle:        cycle,
-		LastExecTime: time.Now().Unix() - rand.Int63n(60), // set last exec time as an old time, so all plugins can run in different tick
+		LastExecTime: time.Now().Unix() - cycle + rand.Int63n(60), // set last exec time as an old time, so all plugins can run in different tick
 		timeout:      calTimeout(cycle),
 	}
 	return p, nil

@@ -27,7 +27,7 @@ func TestRead(t *testing.T) {
 			metrics, err := readFile("tests/test.log")
 			So(err, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 0)
-			So(files["tests/test.log"] == now.Unix()*1e9, ShouldBeTrue)
+			So(files["tests/test.log"]-now.Unix()*1e9 < 1e9, ShouldBeTrue)
 		})
 	})
 }

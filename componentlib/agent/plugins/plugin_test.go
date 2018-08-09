@@ -36,13 +36,14 @@ func (m fileInfo) Sys() interface{} {
 
 func TestPlugin(t *testing.T) {
 	Convey("plugin", t, func() {
-		p, err := NewPlugin("300_test.py", "test.log", new(fileInfo))
+		p, err := NewPlugin("3000_test.py", "test.log", new(fileInfo))
 		So(err, ShouldBeNil)
 
-		So(time.Now().Unix()-p.LastExecTime, ShouldBeLessThan, 61)
-		So(p.Cycle, ShouldEqual, 300)
-		So(p.timeout, ShouldEqual, 299*time.Second)
-		So(p.ShouldExec(time.Now().Unix()+300), ShouldBeTrue)
+		So(time.Now().Unix()-p.LastExecTime, ShouldBeLessThan, 3000)
+		So(time.Now().Unix()-p.LastExecTime, ShouldBeGreaterThan, 3000-61)
+		So(p.Cycle, ShouldEqual, 3000)
+		So(p.timeout, ShouldEqual, 2999*time.Second)
+		So(p.ShouldExec(time.Now().Unix()+60), ShouldBeTrue)
 
 		Convey("plugin.exec", func() {
 			p, err := NewPlugin("tests/10_test.sh", "", new(fileInfo))

@@ -85,7 +85,7 @@ func main() {
 		}
 	}
 
-	processor.Register(transfer.Metrics, judgeFn, logutil.Write)
+	processor.Register(judgeFn, logutil.Write, transfer.Metrics)
 	processor.RegisterEvent(transfer.Events)
 
 	go processor.Process(metricsQueue, eventsQueue, errorQueue)
