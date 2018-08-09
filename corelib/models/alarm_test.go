@@ -2,12 +2,14 @@ package models
 
 import (
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAlarm(t *testing.T) {
 	Convey("alarm", t, func() {
+		_, offset := time.Now().Zone()
 		Convey("user.status", func() {
 			us := &UserStatus{
 				EmailStatus: 1,
@@ -23,30 +25,30 @@ func TestAlarm(t *testing.T) {
 				StartTime: 3600,
 				EndTime:   7200,
 			}
-			So(tu.IsInTime(3890-3600*8), ShouldBeTrue)
-			So(tu.IsInTime(7899-3600*8), ShouldBeFalse)
+			So(tu.IsInTime(3890-int64(offset)), ShouldBeTrue)
+			So(tu.IsInTime(7899-int64(offset)), ShouldBeFalse)
 
 			tu2 := &TeamUserStatus{
 				EndTime:   3600,
 				StartTime: 7200,
 			} // means 0-7200 ~ 86400+3600 ~ 86400*2-0
-			So(tu2.IsInTime(3890-3600*8), ShouldBeFalse)
-			So(tu2.IsInTime(7899-3600*8), ShouldBeTrue)
+			So(tu2.IsInTime(3890-int64(offset)), ShouldBeFalse)
+			So(tu2.IsInTime(7899-int64(offset)), ShouldBeTrue)
 		})
 		Convey("du.info", func() {
 			tu := &DutyInfo{
 				BeginTime: 3600,
 				EndTime:   7200,
 			}
-			So(tu.IsInTime(3890-3600*8), ShouldBeTrue)
-			So(tu.IsInTime(7899-3600*8), ShouldBeFalse)
+			So(tu.IsInTime(3890-int64(offset)), ShouldBeTrue)
+			So(tu.IsInTime(7899-int64(offset)), ShouldBeFalse)
 
 			tu2 := &DutyInfo{
 				EndTime:   3600,
 				BeginTime: 7200,
 			} // means 0-7200 ~ 86400+3600 ~ 86400*2-0
-			So(tu2.IsInTime(3890-3600*8), ShouldBeFalse)
-			So(tu2.IsInTime(7899-3600*8), ShouldBeTrue)
+			So(tu2.IsInTime(3890-int64(offset)), ShouldBeFalse)
+			So(tu2.IsInTime(7899-int64(offset)), ShouldBeTrue)
 
 			tu3 := &DutyInfo{
 				EndTime:   3600,

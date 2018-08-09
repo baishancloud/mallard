@@ -263,6 +263,34 @@ func NewEventDto(event *EventFull, st *Strategy) *EventDto {
 	return t
 }
 
+// NewEventDtoByExpression creates new dto from event and expression
+func NewEventDtoByExpression(event *EventFull, exp *Expression) *EventDto {
+	t := &EventDto{
+		ID:             event.ID,
+		Endpoint:       event.Endpoint,
+		Metric:         strings.Join(exp.Metrics(), ","),
+		FieldTransform: "",
+		Func:           "",
+		LeftValue:      friendFloat(event.LeftValue),
+		Operator:       exp.Operator,
+		RightValue:     friendFloat(exp.RightValue),
+		Note:           exp.Note,
+		MaxStep:        exp.MaxStep,
+		CurrentStep:    event.CurrentStep,
+		Priority:       event.Priority(),
+		Status:         event.Status,
+		Timestamp:      event.EventTime,
+		ExpressionID:   exp.ID,
+		StrategyID:     0,
+		TemplateID:     0,
+		// ActionID:       event.Action.ID,
+		PushedTags: event.PushedTags,
+		Fields:     event.Fields,
+		Judge:      event.Judge,
+	}
+	return t
+}
+
 func friendFloat(raw float64) string {
 	val := strconv.FormatFloat(raw, 'f', 5, 64)
 	if strings.Contains(val, ".") {
@@ -283,6 +311,20 @@ func FillEventStrategy(event *EventFull) error {
 		return err
 	}
 	event.Strategy = st
+	return nil
+}
+
+// FillEventExpression fills event expression from interface to expression
+func FillEventExpression(event *EventFull) error {
+	if _, ok := event.Strategy.(*Expression); ok { // already set, ignore
+		return nil
+	}
+	b, _ := json.Marshal(event.Strategy)
+	exp := new(Expression)
+	if err := json.Unmarshal(b, exp); err != nil {
+		return err
+	}
+	event.Strategy = exp
 	return nil
 }
 
