@@ -55,6 +55,23 @@ func GetRawEvent(eid string) (*models.Event, error) {
 	return event, nil
 }
 
+// CheckRawEventTime checks eid's time is over raw data
+// if over, return true
+func CheckRawEventTime(eid string, t int64) int64 {
+	if cacheCli == nil {
+		return 0
+	}
+	t2, err := cacheCli.HGet(eid, "lastest_time").Int64()
+	if err != nil {
+		log.Warn("check-time-error", "error", err, "eid", eid)
+		return 0
+	}
+	if t >= t2 {
+		return 0
+	}
+	return t2
+}
+
 // CacheEvents saves events to cache redis db
 func CacheEvents(events []*models.Event) error {
 	if cacheCli == nil {
@@ -65,6 +82,11 @@ func CacheEvents(events []*models.Event) error {
 
 	for _, event := range events {
 		if event == nil {
+			continue
+		}
+		t2, _ := cacheCli.HGet(event.ID, "lastest_time").Int64()
+		if t2 > 0 && t2 > event.Time {
+			log.Warn("old-event-ignore", "eid", event.ID, "status", event.Status.String(), "t1", event.Time, "t2", t2)
 			continue
 		}
 		b, err := json.Marshal(event)

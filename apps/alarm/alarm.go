@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"runtime"
 	"time"
 
@@ -24,11 +23,10 @@ import (
 )
 
 var (
-	version     = "2.5.3"
-	configFile  = "config.json"
-	cfg         = defaultConfig()
-	log         = zaplog.Zap("alarm")
-	hostname, _ = os.Hostname()
+	version    = "2.5.3"
+	configFile = "config.json"
+	cfg        = defaultConfig()
+	log        = zaplog.Zap("alarm")
 
 	statsDumpFile = "alarm_stats.json"
 )
@@ -54,7 +52,7 @@ func main() {
 
 	configapi.SetAPI(cfg.CenterAddr)
 	configapi.SetHostService(&models.HostService{
-		Hostname:       hostname,
+		Hostname:       utils.HostName(),
 		IP:             utils.LocalIP(),
 		ServiceName:    "mallard2-alarm",
 		ServiceVersion: version,
@@ -63,16 +61,15 @@ func main() {
 	configapi.SetIntervals([]string{"alarms", "alarm-requests", "sync-hostservice"})
 	go configapi.Intervals(time.Second * 30)
 
-	redisdata.SetClient(redisCli, nil)
-	redisdata.SetAlarmQueues(cfg.LowQueues, cfg.HighQueues)
-	redisdata.SetAlertSubscribe(cfg.AlarmSubscribeKey)
-
 	msggcall.SetFiles(cfg.CommandFile, cfg.ActionFile, cfg.MsggFile, cfg.MsggFileWay)
 	msggcall.SetDirLayout(cfg.MsggFileLayout)
 	msggcall.CallFileExpiry = cfg.MsggFileWayExpire
 	go msggcall.ScanRequests(time.Second*time.Duration(cfg.MsggTicker), cfg.MsggMergeLevel, cfg.MsggMergeSize)
 	go msggcall.SyncPrintCount("mallard2_alarm_msgg_users", time.Hour, cfg.StatMsggUserFile)
 
+	redisdata.SetClient(redisCli, nil)
+	redisdata.SetAlarmQueues(cfg.LowQueues, cfg.HighQueues)
+	redisdata.SetAlertSubscribe(cfg.AlarmSubscribeKey)
 	eventCh := make(chan redisdata.EventRecord, 1e4)
 	go redisdata.Pop(eventCh, time.Second)
 

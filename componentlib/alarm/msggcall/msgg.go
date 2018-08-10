@@ -55,21 +55,32 @@ var (
 	requestsLock sync.RWMutex
 )
 
-// Call adds event msgg requests to call
-func Call(record redisdata.EventRecord) {
+func getCallStrategy(record redisdata.EventRecord) *models.Strategy {
 	if !record.IsHigh {
-		return
+		return nil
+	}
+	if record.Event.ID == "" || record.Event.Status == "" || record.Event.EventTime == 0 {
+		return nil
 	}
 	if record.Event.Status == models.EventOutdated.String() || record.Event.Status == models.EventClosed.String() {
-		return
+		return nil
 	}
 	if err := models.FillEventStrategy(record.Event); err != nil {
 		log.Warn("fill-strategy-error", "event", record.Event, "error", err)
-		return
+		return nil
 	}
 	st, ok := record.Event.Strategy.(*models.Strategy)
 	if !ok {
 		log.Warn("nil-strategy-error", "event", record.Event)
+		return nil
+	}
+	return st
+}
+
+// Call adds event msgg requests to call
+func Call(record redisdata.EventRecord) {
+	st := getCallStrategy(record)
+	if st == nil {
 		return
 	}
 
@@ -85,36 +96,42 @@ func Call(record redisdata.EventRecord) {
 			uic = action.Uic
 		}
 		if commandFile != "" {
-			go CallCommand(record.Event, st.Note, uic)
+			go func() {
+				output, err := CallCommand(record.Event, st.Note, uic)
+				if err != nil {
+					log.Warn("call-cmd-error", "error", err, "event", record.Event)
+					return
+				}
+				log.Info("call-cmd", "eid", record.Event.ID, "status", record.Event.Status, "output", output)
+			}()
 		}
 		if actionFile != "" {
-			go CallAction(record.Event, st.Note, uic)
+			go func() {
+				output, err := CallAction(record.Event, st.Note, uic)
+				if err != nil {
+					log.Warn("call-action-error", "error", err, "event", record.Event)
+					return
+				}
+				log.Info("call-action", "eid", record.Event.ID, "status", record.Event.Status, "output", output)
+			}()
 		}
 	}
 }
 
 // CallCommand call command script
-func CallCommand(event *models.EventFull, note string, uic string) {
+func CallCommand(event *models.EventFull, note string, uic string) (string, error) {
 	args := []string{event.Endpoint, note, strconv.Itoa(event.Priority()), event.PushedTags["sertypes"], uic, strconv.FormatFloat(event.LeftValue, 'f', 3, 64)}
 	output, err := runWithTimeout(commandFile, args, time.Second*30)
-	if err != nil {
-		log.Warn("call-cmd-error", "error", err, "eid", event.ID)
-		return
-	}
-	log.Info("call-cmd", "eid", event.ID, "status", event.Status, "output", string(output))
+	return string(output), err
 }
 
 // CallAction call action script
-func CallAction(event *models.EventFull, note string, uic string) {
+func CallAction(event *models.EventFull, note string, uic string) (string, error) {
 	pushTagsJSON, _ := json.Marshal(event.PushedTags)
 	pushFieldsJSON, _ := json.Marshal(event.Fields)
 	args := []string{event.Endpoint, note, strconv.Itoa(event.Priority()), string(pushTagsJSON), uic, strconv.FormatFloat(event.LeftValue, 'f', 3, 64), string(pushFieldsJSON)}
 	output, err := runWithTimeout(actionFile, args, time.Second*30)
-	if err != nil {
-		log.Warn("call-action-error", "error", err, "event", event)
-		return
-	}
-	log.Info("call-action", "eid", event.ID, "status", event.Status, "output", string(output))
+	return string(output), err
 }
 
 // CallMsgg call msgg script

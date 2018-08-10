@@ -18,7 +18,12 @@ func Alert(record EventRecord) {
 		return
 	}
 	if isFromStrategy(event.ID) {
-		HandleEvent(event, record.IsHigh)
+		HandleEvent(event, record.IsHigh, "strategy")
+		return
+	}
+	if isFromExpression(event.ID) {
+		HandleEvent(event, record.IsHigh, "expression")
+		return
 	}
 }
 
@@ -31,24 +36,62 @@ func isFromStrategy(eid string) bool {
 	return strings.HasPrefix(eid, strategyEventPrefix) || strings.HasPrefix(eid, strategyNodataPrefix)
 }
 
-// HandleEvent sets event info to redis
-func HandleEvent(event *models.EventFull, isHigh bool) {
-	if err := models.FillEventStrategy(event); err != nil {
-		log.Warn("fill-strategy-error", "error", err, "event", event)
-		return
-	}
-	st, _ := event.Strategy.(*models.Strategy)
-	if st == nil {
-		log.Warn("fill-strategy-nil", "event", event)
-		return
-	}
+const (
+	expressionEventPrefix = "e_"
+)
 
-	redisOperateEvent(event, st)
+func isFromExpression(eid string) bool {
+	return strings.HasPrefix(eid, expressionEventPrefix)
+}
+
+const (
+	typeStrategy   = "strategy"
+	typeExpression = "expression"
+)
+
+// HandleEvent sets event info to redis
+func HandleEvent(event *models.EventFull, isHigh bool, fillType string) {
+	if fillType == typeStrategy {
+		if err := models.FillEventStrategy(event); err != nil {
+			log.Warn("fill-strategy-error", "error", err, "event", event)
+			return
+		}
+		st, _ := event.Strategy.(*models.Strategy)
+		if st == nil {
+			log.Warn("fill-strategy-nil", "event", event)
+			return
+		}
+		redisHandle(event, st)
+		return
+	}
+	if fillType == typeExpression {
+		if err := models.FillEventExpression(event); err != nil {
+			log.Warn("fill-expression-error", "error", err, "event", event)
+			return
+		}
+		exp, _ := event.Strategy.(*models.Expression)
+		if exp == nil {
+			log.Warn("fill-expression-nil", "event", event)
+			return
+		}
+		redisHandle(event, exp)
+		return
+	}
 }
 
 // SaveEventFromStrategy saves event from strategy
 func SaveEventFromStrategy(event *models.EventFull, st *models.Strategy) {
 	dto := models.NewEventDto(event, st)
+	saveDto(event, dto)
+}
+
+// SaveEventFromExpression saves event from expression
+func SaveEventFromExpression(event *models.EventFull, exp *models.Expression) {
+	dto := models.NewEventDtoByExpression(event, exp)
+	saveDto(event, dto)
+}
+
+func saveDto(event *models.EventFull, dto *models.EventDto) {
 	lastStr, _ := queueCli.Get(dto.ID).Result()
 	if len(lastStr) > 0 {
 		lastTodo := new(models.EventDto)
@@ -93,12 +136,16 @@ func SaveEventFromStrategy(event *models.EventFull, st *models.Strategy) {
 	}
 }
 
-func redisOperateEvent(event *models.EventFull, st *models.Strategy) {
+func redisHandle(event *models.EventFull, judgeUnit interface{}) {
 	if event.Status == models.EventOk.String() {
 		RemoveEvent(event.ID)
 		return
 	}
-	SaveEventFromStrategy(event, st)
+	if st, ok := judgeUnit.(*models.Strategy); ok {
+		SaveEventFromStrategy(event, st)
+	} else if exp, ok := judgeUnit.(*models.Expression); ok {
+		SaveEventFromExpression(event, exp)
+	}
 	ToSubscrible(event.ID)
 }
 

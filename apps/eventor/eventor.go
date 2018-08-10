@@ -9,6 +9,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/eventor/redisdata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
@@ -51,7 +52,14 @@ func main() {
 	}
 
 	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetIntervals([]string{"strategies", "endpoints", "expressions"})
+	configapi.SetHostService(&models.HostService{
+		Hostname:       utils.HostName(),
+		IP:             utils.LocalIP(),
+		ServiceName:    "mallard2-eventor",
+		ServiceVersion: version,
+		ServiceBuild:   BuildTime,
+	})
+	configapi.SetIntervals([]string{"strategies", "endpoints", "expressions", "sync-hostservice"})
 	go configapi.Intervals(time.Minute)
 
 	redisdata.SetClient(queueCli, cacheCli)

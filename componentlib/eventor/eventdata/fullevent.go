@@ -46,7 +46,7 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 			*st2 = *st
 			st2.Note, err = renderEventNote(st2.Note, evt)
 			if err != nil {
-				return nil, "", err
+				st2.Note = st.Note
 			}
 			evt.Strategy = st2
 			if len(st2.MarkTags) > 0 {
@@ -63,7 +63,7 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 			*exp2 = *exp
 			exp2.Note, err = renderEventNote(exp2.Note, evt)
 			if err != nil {
-				return nil, "", err
+				exp2.Note = exp.Note
 			}
 			evt.Strategy = exp2
 			return evt, exp2.Note, err
