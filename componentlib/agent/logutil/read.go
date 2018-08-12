@@ -100,9 +100,11 @@ func ReadInterval(interval time.Duration, ch chan []*models.Metric) {
 	if readDir == "" {
 		return
 	}
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
+	utils.Ticker(interval, readOnce(ch))
+}
+
+func readOnce(ch chan []*models.Metric) func() {
+	return func() {
 		metrics, err := readDirMetrics()
 		if err != nil {
 			log.Warn("read-error", "error", err)
@@ -116,6 +118,5 @@ func ReadInterval(interval time.Duration, ch chan []*models.Metric) {
 				readCount.Incr(mLen)
 			}
 		}
-		<-ticker.C
 	}
 }

@@ -22,6 +22,10 @@ type Operator interface {
 var (
 	// ErrUnknownTransform is error of unknown transform function
 	ErrUnknownTransform = errors.New("unknown-transform")
+	// ErrUnknownCalcuateFunc is error of unknown calculate function
+	ErrUnknownCalcuateFunc = errors.New("unknown-calculate-func")
+	// ErrUnknownCompareFunc is error of unknown compare function
+	ErrUnknownCompareFunc = errors.New("unknown-compare-func")
 )
 
 // FromStrategy return operator with strategy
@@ -143,15 +147,15 @@ func NewSelectFromStrategy(st *models.Strategy) (*Select, error) {
 	}
 	s.calculateFn = NewCalculateFunc(s.base.CalType)
 	if s.calculateFn == nil {
-		return nil, err
+		return nil, ErrUnknownCalcuateFunc
 	}
 	s.compareFn = NewCompareFunc(st.Operator)
 	if s.compareFn == nil {
-		return nil, err
+		return nil, ErrUnknownCompareFunc
 	}
 	fieldS := strings.Split(selectReplacer.Replace(st.FieldTransform), "|")
 	if len(fieldS) != 2 {
-		return nil, err
+		return nil, ErrUnknownTransform
 	}
 	s.base.Field = strings.TrimSpace(fieldS[1])
 	return &s, nil
@@ -231,11 +235,11 @@ func NewRangeSelectFromStrategy(st *models.Strategy) (*RangeSelect, error) {
 	}
 	s.calculateFn = NewCalculateFunc(s.base.CalType)
 	if s.calculateFn == nil {
-		return nil, err
+		return nil, ErrUnknownCalcuateFunc
 	}
 	s.compareFn = NewCompareFunc(st.Operator)
 	if s.compareFn == nil {
-		return nil, err
+		return nil, ErrUnknownCompareFunc
 	}
 	fieldS := strings.Split(rangeSelectReplacer.Replace(st.FieldTransform), "|")
 	if len(fieldS) != 6 {
@@ -346,11 +350,11 @@ func NewRangeXORFromStrategy(st *models.Strategy, isOR bool) (*RangeXOR, error) 
 	}
 	s.calculateFn = NewCalculateFunc(s.base.CalType)
 	if s.calculateFn == nil {
-		return nil, err
+		return nil, ErrUnknownCalcuateFunc
 	}
 	s.compareFn = NewCompareFunc(st.Operator)
 	if s.compareFn == nil {
-		return nil, err
+		return nil, ErrUnknownCompareFunc
 	}
 	fieldS := strings.Split(rangeSelectReplacer.Replace(st.FieldTransform), "|")
 	if (len(fieldS)-2)%3 != 0 {

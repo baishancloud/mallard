@@ -13,6 +13,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/agent/syscollector"
 	"github.com/baishancloud/mallard/componentlib/agent/transfer"
 	"github.com/baishancloud/mallard/corelib/expvar"
+	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
@@ -98,7 +99,7 @@ func main() {
 	go plugins.SyncScan(time.Minute)
 
 	httpserver.SetQueue(metricsQueue)
-	go httpserver.Listen(cfg.Server.Addr)
+	go httputil.Listen(cfg.Server.Addr, httpserver.CreateHandlers())
 
 	logutil.SetReadDir(cfg.Logutil.ReadDir)
 	logutil.SetWriteFile(cfg.Logutil.WriteFile, cfg.Logutil.CleanDays, cfg.Logutil.GzipDays)

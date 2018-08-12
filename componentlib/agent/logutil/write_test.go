@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/baishancloud/mallard/corelib/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -29,6 +30,36 @@ func TestCleanLog(t *testing.T) {
 			So(err, ShouldBeNil)
 			os.Remove(filename)
 		}
+	})
+	Convey("set.write", t, func() {
+		SetWriteFile("./tests/test_%s.log", 4, 2)
+		So(writingFilename, ShouldContainSubstring, time.Now().Format("20060102"))
+		So(writeFileHandler, ShouldNotBeNil)
+
+		Write([]*models.Metric{{
+			Name:     "cpu",
+			Time:     1,
+			Value:    2,
+			Endpoint: "localhost",
+		}, {
+			Name:     "cpu",
+			Time:     2,
+			Value:    2,
+			Endpoint: "localhost",
+		}})
+		info, _ := os.Stat(writingFilename)
+		So(info.Size(), ShouldEqual, 114)
+		os.RemoveAll(writingFilename)
+
+		SetWriteFile("./tests/ttt.log", 0, 0)
+		So(writingFilename, ShouldEqual, "./tests/ttt.log")
+		os.RemoveAll(writingFilename)
+
+		Convey("stop.write", func() {
+			Stop()
+			So(writeFileHandler, ShouldBeNil)
+		})
+
 	})
 }
 
