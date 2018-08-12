@@ -9,6 +9,96 @@ import (
 
 func TestStrategyUnit(t *testing.T) {
 	Convey("strategy.unit", t, func() {
+		Convey("strategy.unit.invalid", func() {
+			unit, err := NewUnit(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "xyz(#2)",
+				Operator:       ">=",
+				RightValue:     1,
+			})
+			So(err, ShouldNotBeNil)
+			So(unit.ID(), ShouldEqual, 0)
+			So(unit.GroupBy(), ShouldBeNil)
+
+			unit, err = NewUnit(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "all(#2)",
+				Operator:       ">>",
+				RightValue:     1,
+			})
+			So(err, ShouldNotBeNil)
+			So(unit.ID(), ShouldEqual, 0)
+
+			unit, err = NewUnit(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "all#2", // all(#2 is valid, hehehe
+				Operator:       "==",
+				RightValue:     1,
+			})
+			So(err, ShouldNotBeNil)
+			So(unit.ID(), ShouldEqual, 0)
+
+			unit, err = NewUnit(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "all(#x)",
+				Operator:       "==",
+				RightValue:     1,
+			})
+			So(err, ShouldNotBeNil)
+			So(unit.ID(), ShouldEqual, 0)
+
+			unit, err = NewUnit(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "all(#2)",
+				Operator:       "==",
+				RightValue:     1,
+				TagString:      "a=b,x",
+			})
+			So(err, ShouldNotBeNil)
+			So(unit.ID(), ShouldEqual, 0)
+
+			unit, err = NewUnit(&models.Strategy{
+				ID:             1,
+				Metric:         "cpu",
+				FieldTransform: "select(value(",
+				Func:           "all(#2)",
+				Operator:       "==",
+				RightValue:     1,
+			})
+			So(err, ShouldNotBeNil)
+			So(unit.ID(), ShouldEqual, 0)
+		})
+
+		Convey("strategy.unit.info", func() {
+			unit, err := NewUnit(&models.Strategy{
+				ID:             9,
+				Metric:         "cpu",
+				FieldTransform: "select(value)",
+				Func:           "all(#2)",
+				Operator:       "==",
+				RightValue:     1,
+				TagString:      "a=b",
+				Score:          0.5,
+			})
+			So(err, ShouldBeNil)
+			So(unit.ID(), ShouldEqual, 9)
+			So(unit.Operator(), ShouldNotBeNil)
+			So(unit.Operator().Base(), ShouldNotBeNil)
+			So(unit.Operator().Tags(), ShouldContainKey, "a")
+			So(unit.GroupBy(), ShouldResemble, defaultUnitGroups)
+			So(unit.Score(), ShouldEqual, 0.5)
+		})
+
 		unit, err := NewUnit(&models.Strategy{
 			ID:             1,
 			Metric:         "cpu",

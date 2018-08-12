@@ -56,6 +56,7 @@ func Stop() {
 		writeFileHandler.Sync()
 		writeFileHandler.Close()
 		log.Info("stop")
+		writeFileHandler = nil
 	}
 }
 

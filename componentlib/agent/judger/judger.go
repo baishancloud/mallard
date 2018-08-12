@@ -61,18 +61,20 @@ func SetStrategyData(ss []*models.Strategy) []*models.Event {
 		if ok {
 			if err := u.SetStrategy(s); err != nil {
 				log.Warn("unit-reload-error", "error", err, "id", u.ID())
+			} else {
+				accepts[s.Metric] = append(accepts[s.Metric], s.ID)
 			}
 		} else {
 			var err error
 			u, err = NewUnit(s)
 			if err == nil {
 				units[key] = u
+				accepts[s.Metric] = append(accepts[s.Metric], s.ID)
 				// log.Debug("unit-new", "id", u.ID())
 			} else {
 				log.Warn("unit-new-error", "error", err, "s", s)
 			}
 		}
-		accepts[s.Metric] = append(accepts[s.Metric], s.ID)
 	}
 	for k := range accepts {
 		sort.Sort(sort.IntSlice(accepts[k]))
@@ -147,10 +149,10 @@ func judgeOnce(metric *models.Metric) []*models.Event {
 			}
 			continue
 		}
-		if status == models.EventSyntax && err != nil {
+		/*if status == models.EventSyntax && err != nil {
 			log.Debug("strategy-check-fail", "sid", u.ID(), "error", err)
 			continue
-		}
+		}*/
 
 		event := &models.Event{
 			ID:         fmt.Sprintf("s_%d_%s", u.ID(), metric.Hash()),
@@ -174,7 +176,7 @@ func judgeOnce(metric *models.Metric) []*models.Event {
 		if eventCurrent.ShouldAlarm(event) {
 			if event.Status == models.EventOk {
 				eventOKCount.Incr(1)
-				if event.Step > 5 {
+				if event.Step > 3 {
 					event = event.Simple()
 				}
 			}

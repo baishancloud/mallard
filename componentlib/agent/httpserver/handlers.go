@@ -12,10 +12,12 @@ import (
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/pprofwrap"
+	"github.com/baishancloud/mallard/corelib/zaplog"
 	"github.com/julienschmidt/httprouter"
 )
 
 var (
+	log    = zaplog.Zap("http")
 	mQueue chan<- []*models.Metric
 )
 
@@ -28,7 +30,8 @@ func SetQueue(mCh chan<- []*models.Metric) {
 	mQueue = mCh
 }
 
-func initHandlers() http.Handler {
+// CreateHandlers creates handler
+func CreateHandlers() http.Handler {
 	r := httprouter.New()
 	r.GET("/v1/config", configGet)
 	r.GET("/v1/event", eventGet)
@@ -131,7 +134,11 @@ func eventGet(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	if sid := r.FormValue("strategy"); sid != "" {
-		id, _ := strconv.Atoi(sid)
+		id, err := strconv.Atoi(sid)
+		if err != nil {
+			responseFail(rw, err, "bad-strategy-id")
+			return
+		}
 		events := history.FindByStrategy(id)
 		writeBodyJSON(rw, events)
 		return
