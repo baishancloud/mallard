@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	version    = "2.5.0"
+	version    = "2.5.2"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("agent")
@@ -47,9 +47,9 @@ func main() {
 	serverinfo.UseAllConf = cfg.UseAllConf
 	serverinfo.Scan(cfg.Endpoint)
 
-	metricsQueue := make(chan []*models.Metric, 2e4)
-	eventsQueue := make(chan []*models.Event, 2e4)
-	errorQueue := make(chan error, 2e3)
+	metricsQueue := make(chan []*models.Metric, 1e3)
+	eventsQueue := make(chan []*models.Event, 1e3)
+	errorQueue := make(chan error, 1e3)
 
 	transfer.SetURLs(cfg.Transfer.FullURLs(serverinfo.Hostname()), cfg.Transfer.APIs)
 	configSyncOpt := transfer.SyncOption{
@@ -86,7 +86,7 @@ func main() {
 		}
 	}
 
-	processor.Register(judgeFn, logutil.Write, transfer.Metrics)
+	processor.Register(transfer.Metrics, judgeFn, logutil.Write)
 	processor.RegisterEvent(transfer.Events)
 
 	go processor.Process(metricsQueue, eventsQueue, errorQueue)

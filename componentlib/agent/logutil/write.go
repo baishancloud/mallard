@@ -80,7 +80,7 @@ func Write(metrics []*models.Metric) {
 	if writeFileHandler != nil {
 		writeFileHandler.Write(buf.Bytes())
 	}
-	if rand.Intn(10000)%300 == 0 {
+	if rand.Intn(10000)%1000 == 0 && strings.Contains(writingFileLayout, "%s") {
 		tryRotate()
 	}
 }

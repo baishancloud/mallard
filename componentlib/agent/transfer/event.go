@@ -9,7 +9,7 @@ import (
 
 var (
 	// MaxEventsInOnce is max length of events in one request
-	MaxEventsInOnce = 500
+	MaxEventsInOnce = 2000
 
 	eventSendCount    = expvar.NewDiff("poster.event")
 	eventFailCount    = expvar.NewDiff("poster.event_fail")

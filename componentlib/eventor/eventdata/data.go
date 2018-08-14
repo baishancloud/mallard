@@ -120,7 +120,8 @@ func cacheNODATA(events []*models.Event) error {
 	if len(nodataKeys) == 0 {
 		return ErrStrategyZeroNodataKeys
 	}
-	var count int
+	setNodataMap := make(map[string]int64)
+	removeNodataMap := make(map[string]int64)
 	for _, evt := range events {
 		// only for s_eid events
 		if !strings.HasPrefix(evt.ID, "s_") {
@@ -130,20 +131,33 @@ func cacheNODATA(events []*models.Event) error {
 		if idx < 2 {
 			continue
 		}
+		// special status, clean nodata
+		if evt.Status == models.EventOutdated || evt.Status == models.EventClosed {
+			removeNodataMap[evt.ID] = 1
+			continue
+		}
 		prefix := evt.ID[:idx]
 		for _, s := range nodataKeys {
 			if prefix == s {
 				log.Debug("nodata-set", "eid", evt.ID)
-				if err := redisdata.SetEventNodata(evt.ID, evt.Time); err != nil {
-					log.Warn("nodata-set-error", "eid", evt.ID, "error", err)
-				}
+				setNodataMap[evt.ID] = evt.Time
 
-				count++
 			}
 		}
 	}
-	if count > 0 {
-		log.Info("nodata-set-ok", "count", count, "all", len(events))
+	if len(setNodataMap) > 0 {
+		if err := redisdata.SetSomeEventNoData(setNodataMap); err != nil {
+			log.Warn("nodata-set-error", "count", len(setNodataMap), "error", err)
+		} else {
+			log.Info("nodata-set-ok", "count", len(setNodataMap), "all", len(events))
+		}
+	}
+	if len(removeNodataMap) > 0 {
+		if err := redisdata.RemoveSomeEventNodata(removeNodataMap); err != nil {
+			log.Warn("nodata-set-rm-error", "count", len(removeNodataMap), "error", err)
+		} else {
+			log.Info("nodata-set-rm-ok", "count", len(removeNodataMap), "all", len(events))
+		}
 	}
 	return nil
 }

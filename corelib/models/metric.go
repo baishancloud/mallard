@@ -17,6 +17,8 @@ type Metric struct {
 	Tags     map[string]string      `json:"tags,omitempty"`
 	Endpoint string                 `json:"endpoint,omitempty"`
 	Step     int                    `json:"step,omitempty"`
+
+	fullTags map[string]string
 }
 
 // Hash generates unique hash of the metric
@@ -80,12 +82,15 @@ func (m *Metric) FillTags(sertypes, cachegroup, storagegroup, gendpoint string) 
 
 // FullTags return all tags with serv and endpoint data
 func (m *Metric) FullTags() map[string]string {
-	fullTags := make(map[string]string, len(m.Tags)+1)
-	for k, v := range m.Tags {
-		fullTags[k] = v
+	if len(m.fullTags) != len(m.Tags)+1 {
+		fullTags := make(map[string]string, len(m.Tags)+1)
+		for k, v := range m.Tags {
+			fullTags[k] = v
+		}
+		fullTags["endpoint"] = m.Endpoint
+		m.fullTags = fullTags
 	}
-	fullTags["endpoint"] = m.Endpoint
-	return fullTags
+	return m.fullTags
 }
 
 // MetricRaw is old metric data struct

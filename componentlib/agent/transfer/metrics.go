@@ -9,7 +9,7 @@ import (
 
 var (
 	// MaxMetricsInOnce is max length of metrics in one requests
-	MaxMetricsInOnce = 1000
+	MaxMetricsInOnce = 2000
 
 	metricSendCount    = expvar.NewDiff("poster.metric")
 	metricFailCount    = expvar.NewDiff("poster.metric_fail")
@@ -35,8 +35,8 @@ func Metrics(metrics []*models.Metric) {
 	if len(metrics) > MaxMetricsInOnce {
 		idx := len(metrics) / 2
 		log.Debug("metrics-split", "all", len(metrics), "idx", idx)
-		go Metrics(metrics[:idx])
-		go Metrics(metrics[idx:])
+		Metrics(metrics[:idx])
+		Metrics(metrics[idx:])
 		return
 	}
 

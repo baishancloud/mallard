@@ -250,12 +250,44 @@ func SetEventNodata(eid string, tUnix int64) error {
 	return cacheCli.HSet("nodata", eid, tUnix).Err()
 }
 
+// SetSomeEventNoData sets some nodata eid and updated time in pipeline
+func SetSomeEventNoData(values map[string]int64) error {
+	if cacheCli == nil {
+		return ErrCacheNil
+	}
+	pipe := cacheCli.Pipeline()
+	defer pipe.Close()
+
+	for eid, t := range values {
+		pipe.HSet("nodata", eid, t)
+	}
+
+	_, err := pipe.Exec()
+	return err
+}
+
 // RemoveEventNodata removes nodata eid and updated time
 func RemoveEventNodata(eid string) error {
 	if cacheCli == nil {
 		return ErrCacheNil
 	}
 	return cacheCli.HDel("nodata", eid).Err()
+}
+
+// RemoveSomeEventNodata removes nodata eid list in pipeline
+func RemoveSomeEventNodata(values map[string]int64) error {
+	if cacheCli == nil {
+		return ErrCacheNil
+	}
+	pipe := cacheCli.Pipeline()
+	defer pipe.Close()
+
+	for eid := range values {
+		pipe.HDel("nodata", eid)
+	}
+
+	_, err := pipe.Exec()
+	return err
 }
 
 // CacheDBSize get size of cache redis db

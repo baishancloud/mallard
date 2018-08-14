@@ -4,7 +4,7 @@ in highly development, should not use in production
 
 [![Build Status](https://travis-ci.org/baishancloud/mallard.svg?branch=master)](https://travis-ci.org/baishancloud/mallard)
 
-[![codecov](https://codecov.io/gh/baishancloud/mallard/branch/opensource/graph/badge.svg)](https://codecov.io/gh/baishancloud/mallard)
+[![codecov](https://codecov.io/gh/baishancloud/mallard/branch/master/graph/badge.svg)](https://codecov.io/gh/baishancloud/mallard)
 
 ### Introduction
 
