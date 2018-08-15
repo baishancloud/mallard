@@ -120,7 +120,7 @@ func ExtractTags(s string) (map[string]string, error) {
 	if s == "" {
 		return nil, nil
 	}
-	tags := make(map[string]string)
+	tags := make(map[string]string, strings.Count(s, ","))
 	tagSlice := strings.Split(s, ",")
 	for _, tag := range tagSlice {
 		pair := strings.SplitN(tag, "=", 2)
@@ -141,7 +141,7 @@ func ExtractFields(s string) (map[string]interface{}, error) {
 		return nil, nil
 	}
 	var (
-		fields = make(map[string]interface{})
+		fields = make(map[string]interface{}, strings.Count(s, ","))
 	)
 	fieldSlice := strings.Split(s, ",")
 	for _, field := range fieldSlice {

@@ -12,7 +12,7 @@ type config struct {
 func defaultConfig() config {
 	return config{
 		Debug:          true,
-		HTTPAddr:       "127.0.0.1:10999",
+		HTTPAddr:       "127.0.0.1:10998",
 		PerfFile:       "performance.json",
 		ReloadInterval: 20,
 	}

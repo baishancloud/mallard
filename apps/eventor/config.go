@@ -18,7 +18,7 @@ func defaultConfig() config {
 	return config{
 		CenterAddr:       "http://127.0.0.1:10999",
 		Debug:            true,
-		HTTPAddr:         "0.0.0.0:10996",
+		HTTPAddr:         "0.0.0.0:10799",
 		RedisAddr:        "127.0.0.1:6379",
 		RedisQueueDb:     0,
 		RedisCacheDb:     1,

@@ -84,7 +84,7 @@ func defaultConfig() *config {
 				"self":   "/api/selfinfo",
 			},
 			URLs: []string{
-				"http://127.0.0.1:10999",
+				"http://127.0.0.1:10899",
 			},
 			ConfigInterval: 30,
 		},
