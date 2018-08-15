@@ -85,7 +85,7 @@ var (
 
 var (
 	// MaxNoteSize is max length of note string
-	MaxNoteSize = 1024
+	MaxNoteSize = 512
 )
 
 // InsertEvent inserts new event

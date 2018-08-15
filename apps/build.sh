@@ -107,7 +107,7 @@ EOF
                 echo "use real-config $realCfgDir/$KEY-config.json"
             fi 
 
-            rpmLockFile=$KEY.rpm.lock
+            rpmLockFile=$KEY-$ver.rpm.log
             rpmFixNumber="1"
             if [ -f "$rpmLockFile" ]; then
                 number=`cat $rpmLockFile`

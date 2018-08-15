@@ -104,7 +104,9 @@ func getConfig(opt SyncOption) (*models.EndpointData, error) {
 
 			transferTimeStr := resp.Header.Get("Transfer-Time")
 			transferTime, _ := strconv.ParseInt(transferTimeStr, 10, 64)
+			sertypes := resp.Header.Get("Transfer-Sertypes")
 			cacheEpData.Time = transferTime
+			cacheEpData.Sertypes = sertypes
 
 			return cacheEpData, nil
 		}
@@ -118,12 +120,14 @@ func getConfig(opt SyncOption) (*models.EndpointData, error) {
 
 		transferTimeStr := resp.Header.Get("Transfer-Time")
 		transferTime, _ := strconv.ParseInt(transferTimeStr, 10, 64)
+		sertypes := resp.Header.Get("Transfer-Sertypes")
 
 		ep := &models.EndpointData{
 			Config: &models.EndpointConfig{
 				Builtin: &models.EndpointBuiltin{},
 			},
-			Time: transferTime,
+			Time:     transferTime,
+			Sertypes: sertypes,
 		}
 		if err := utils.UngzipJSON(resp.Body, ep); err != nil {
 			resp.Body.Close()

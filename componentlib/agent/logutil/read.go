@@ -30,6 +30,7 @@ func SetReadDir(dir string) {
 	if dir == "" {
 		return
 	}
+	os.MkdirAll(dir, os.ModePerm)
 	readDir = dir
 	log.Info("init-read", "dir", dir)
 }

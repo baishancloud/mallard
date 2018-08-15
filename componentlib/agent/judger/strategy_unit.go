@@ -73,7 +73,7 @@ func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, cus
 		}
 	}
 	if len(queue) > 0 && historyData.Time-queue[0].Time > QueueDataExpiry {
-		log.Info("queue-expired", "metric", metric.Name)
+		log.Info("queue-expired", "metric", metric.Name, "hash", metric.Hash())
 		queue = []*models.EventValue{historyData}
 	} else {
 		queue = append([]*models.EventValue{historyData}, queue...)
