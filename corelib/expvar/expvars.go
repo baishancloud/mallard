@@ -106,7 +106,11 @@ func HTTPHandler(rw http.ResponseWriter, r *http.Request) {
 func PrintAlways(metricName string, file string, interval time.Duration) {
 	time.Sleep(time.Second * 10)
 	step := int(interval.Seconds())
-	for {
+	utils.Ticker(interval, printFunc(file, metricName, step))
+}
+
+func printFunc(file string, metricName string, step int) func() {
+	return func() {
 		values := Expose(true)
 		log.Debug("stats", "perf", values)
 		if file != "" {
@@ -119,6 +123,5 @@ func PrintAlways(metricName string, file string, interval time.Duration) {
 			b, _ := json.Marshal([]*models.Metric{metric})
 			ioutil.WriteFile(file, b, os.ModePerm)
 		}
-		time.Sleep(interval)
 	}
 }

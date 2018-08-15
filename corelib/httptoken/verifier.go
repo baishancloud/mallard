@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 	"golang.org/x/time/rate"
 )
@@ -42,12 +43,11 @@ func SyncVerifier(file string, interval time.Duration) {
 		log.Info("no-verify-file")
 		return
 	}
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		refreshVerifyFile(file)
-		<-ticker.C
-	}
+	utils.Ticker(interval, func() {
+		if err := refreshVerifyFile(file); err != nil {
+			log.Warn("refresh-error", "file", file, "error", err)
+		}
+	})
 }
 
 // VerifyRequest checks user and token from http request
@@ -73,26 +73,22 @@ func VerifyUserToken(user string, token string) bool {
 	return tokenMap[user].Token == token
 }
 
-func refreshVerifyFile(file string) {
+func refreshVerifyFile(file string) error {
 	info, err := os.Stat(file)
 	if err != nil {
-		log.Warn("refresh-error", "error", err)
-		return
+		return err
 	}
 	modTime := info.ModTime().Unix()
 	if modTime == tokeFileModTime {
-		log.Debug("refresh-no-change")
-		return
+		return errors.New("no-change")
 	}
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Warn("refresh-error", "error", err)
-		return
+		return err
 	}
 	tokens := make(map[string]*VerifierUser)
 	if err = json.Unmarshal(b, &tokens); err != nil {
-		log.Warn("refresh-error", "error", err)
-		return
+		return err
 	}
 	tokenLock.Lock()
 	tokenMap = tokens
@@ -106,6 +102,7 @@ func refreshVerifyFile(file string) {
 	log.Debug("refresh-ok", "tokens", tokens)
 	tokeFileModTime = modTime
 	tokenLock.Unlock()
+	return nil
 }
 
 // VerifyAllowLimit checks rate limit of user

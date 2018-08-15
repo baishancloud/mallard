@@ -19,6 +19,9 @@ func TestList(t *testing.T) {
 		So(values[1].(int), ShouldEqual, 3)
 		So(values[2].(int), ShouldEqual, 4)
 		So(l.Len(), ShouldEqual, 7)
+		l.PopBatch(100)
+		So(l.Pop(), ShouldBeNil)
+		So(l.PopBatch(100), ShouldHaveLength, 0)
 	})
 
 	Convey("LimitList", t, func() {

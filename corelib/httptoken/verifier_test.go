@@ -9,7 +9,13 @@ import (
 
 func TestVerifier(t *testing.T) {
 	Convey("verfier", t, func() {
-		refreshVerifyFile("test_token.json")
+		err := refreshVerifyFile("notfound.json")
+		So(err, ShouldNotBeNil)
+		So(tokenMap, ShouldHaveLength, 0)
+
+		err = refreshVerifyFile("test_token.json")
+		So(err, ShouldBeNil)
+
 		So(tokenMap, ShouldContainKey, "abc")
 		user := GetUserVerifier("abc")
 		So(user.RateLimit, ShouldEqual, DefaultRateLimit)
@@ -18,7 +24,7 @@ func TestVerifier(t *testing.T) {
 		_, _, check := VerifyRequest(req)
 		So(check, ShouldBeTrue)
 
-		_, _, err := VerifyAndAllow(req)
+		_, _, err = VerifyAndAllow(req)
 		So(err, ShouldBeNil)
 
 		check = VerifyAllowLimit("abc")
@@ -32,5 +38,8 @@ func TestVerifier(t *testing.T) {
 		req2 := httptest.NewRequest("GET", "/?user="+user.User+"&token="+user.Token+"xyz", nil)
 		_, _, err = VerifyAndAllow(req2)
 		So(err, ShouldEqual, ErrorTokenInvalid)
+
+		err = refreshVerifyFile("test_token.json")
+		So(err.Error(), ShouldEqual, "no-change")
 	})
 }
