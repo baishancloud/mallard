@@ -66,10 +66,10 @@ func CheckRawEventTime(eid string, t int64) int64 {
 		log.Warn("check-time-error", "error", err, "eid", eid)
 		return 0
 	}
-	if t >= t2 {
-		return 0
+	if t < t2 {
+		return t2
 	}
-	return t2
+	return 0
 }
 
 // CacheEvents saves events to cache redis db
@@ -83,11 +83,6 @@ func CacheEvents(events []*models.Event) (int, error) {
 	var count int
 	for _, event := range events {
 		if event == nil {
-			continue
-		}
-		t2, _ := cacheCli.HGet(event.ID, "lastest_time").Int64()
-		if t2 > 0 && t2 > event.Time {
-			log.Warn("old-event-ignore", "eid", event.ID, "status", event.Status.String(), "t1", event.Time, "t2", t2)
 			continue
 		}
 		b, err := json.Marshal(event)

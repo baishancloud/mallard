@@ -52,19 +52,6 @@ func Receive(events []*models.Event) {
 		log.Warn("recv-0")
 		return
 	}
-	// save events to redis
-	count, err := redisdata.CacheEvents(events)
-	if err != nil {
-		log.Warn("cache-events-error", "error", err, "len", length)
-	}
-	if diff := len(events) - count; diff > 0 {
-		recvExpired.Incr(int64(diff))
-	}
-
-	// update nodata records
-	if err = cacheNODATA(events); err != nil {
-		log.Warn("cache-nodata-error", "error", err, "len", length)
-	}
 
 	// check events to alarm
 	t := time.Now().Unix()
@@ -103,6 +90,10 @@ func Receive(events []*models.Event) {
 			}
 		}
 		if operateCode != 0 {
+			if operateCode == opExired {
+				recvExpired.Incr(1)
+				continue
+			}
 			if err = Handle(event, operateCode, t); err != nil {
 				alarmHandleFailCount.Incr(1)
 				log.Warn("handle-event-error", "error", err, "status", event.Status.String(), "event", event)
@@ -111,12 +102,24 @@ func Receive(events []*models.Event) {
 	}
 	recvOKCount.Incr(okCount)
 	recvClosed.Incr(closeCount)
+
+	// save events to redis
+	_, err = redisdata.CacheEvents(events)
+	if err != nil {
+		log.Warn("cache-events-error", "error", err, "len", length)
+	}
+
+	// update nodata records
+	if err = cacheNODATA(events); err != nil {
+		log.Warn("cache-nodata-error", "error", err, "len", length)
+	}
 }
 
 const (
 	opIgore  = 1
 	opAlarm  = 3
 	opUpdate = 5
+	opExired = 7
 )
 
 var (
@@ -195,6 +198,11 @@ func Check(event *models.Event) (int, error) {
 			recvMaintains.Incr(1)
 			return opIgore, nil
 		}
+		if t2 := redisdata.CheckRawEventTime(event.ID, event.Time); t2 > 0 {
+			log.Info("event-expired", "status", event.Status.String(), "eid", event.ID, "endpoint", event.Endpoint, "t0", event.Time, "t2", t2)
+			recvExpired.Incr(1)
+			return opExired, nil
+		}
 		// if event is in problem , set opCode to 'update'
 		if isInProblem {
 			// update problem message in redis
@@ -213,7 +221,7 @@ func Check(event *models.Event) (int, error) {
 
 // Handle handles event with proper operate code
 func Handle(event *models.Event, op int, t int64) error {
-	if op == opIgore {
+	if op == opIgore || op == opExired {
 		return nil
 	}
 	fullEvent, note, err := Convert(event, true)
