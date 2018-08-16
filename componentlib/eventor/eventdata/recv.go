@@ -30,6 +30,7 @@ var (
 	recvOutdated     = expvar.NewDiff("rd.recv_outdated")
 	recvMaintains    = expvar.NewDiff("rd.recv_maintains")
 	recvOuttime      = expvar.NewDiff("rd.recv_outtime")
+	recvExpired      = expvar.NewDiff("rd.recv_expired")
 )
 
 func init() {
@@ -38,7 +39,7 @@ func init() {
 		alarmNODATACount, alarmHappenCount,
 		alarmHandleFailCount,
 		recvOKCount, recvProblemCount,
-		recvClosed, recvMaintains, recvOutdated, recvOuttime)
+		recvClosed, recvMaintains, recvOutdated, recvOuttime, recvExpired)
 }
 
 // Receive receives events array and handle
@@ -51,13 +52,21 @@ func Receive(events []*models.Event) {
 		log.Warn("recv-0")
 		return
 	}
-	if err = redisdata.CacheEvents(events); err != nil {
+	// save events to redis
+	count, err := redisdata.CacheEvents(events)
+	if err != nil {
 		log.Warn("cache-events-error", "error", err, "len", length)
 	}
+	if diff := len(events) - count; diff > 0 {
+		recvExpired.Incr(int64(diff))
+	}
+
+	// update nodata records
 	if err = cacheNODATA(events); err != nil {
 		log.Warn("cache-nodata-error", "error", err, "len", length)
 	}
 
+	// check events to alarm
 	t := time.Now().Unix()
 	var (
 		okCount    int64

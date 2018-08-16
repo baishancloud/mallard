@@ -40,7 +40,7 @@ func registerFactory(name string, fn func()) {
 }
 
 // SetIntervals sets valid functions to run interval
-func SetIntervals(names []string) {
+func SetIntervals(names ...string) {
 	intervalsLock.Lock()
 	for _, name := range names {
 		if fn := intervalFactory[name]; fn != nil {

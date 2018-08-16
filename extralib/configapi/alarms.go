@@ -21,9 +21,14 @@ var (
 	alarmActionsCount = expvar.NewBase("csdk.alarm_actions")
 )
 
+const (
+	TypeAlarmsRaw     = "alarms"
+	TypeAlarmRequests = "alarm-requets"
+)
+
 func init() {
-	registerFactory("alarms", reqAlarms)
-	registerFactory("alarm-requests", reqAlarmRequests)
+	registerFactory(TypeAlarmsRaw, reqAlarms)
+	registerFactory(TypeAlarmRequests, reqAlarmRequests)
 	expvar.Register(messagesCount, alarmsCount, alarmActionsCount)
 }
 

@@ -73,13 +73,14 @@ func CheckRawEventTime(eid string, t int64) int64 {
 }
 
 // CacheEvents saves events to cache redis db
-func CacheEvents(events []*models.Event) error {
+func CacheEvents(events []*models.Event) (int, error) {
 	if cacheCli == nil {
-		return ErrCacheNil
+		return 0, ErrCacheNil
 	}
 	pipe := cacheCli.Pipeline()
 	defer pipe.Close()
 
+	var count int
 	for _, event := range events {
 		if event == nil {
 			continue
@@ -96,9 +97,10 @@ func CacheEvents(events []*models.Event) error {
 		}
 		pipe.HSet(event.ID, "current", string(b))
 		pipe.HSet(event.ID, "lastest_time", int64(event.Time))
+		count++
 	}
 	_, err := pipe.Exec()
-	return err
+	return count, err
 }
 
 // CheckEndpointMaintain checkes endpoint is maintained

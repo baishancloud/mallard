@@ -18,8 +18,12 @@ var (
 	strategiesCounter  = expvar.NewBase("csdk.strategies")
 )
 
+const (
+	TypeStrategies = "strategies"
+)
+
 func init() {
-	registerFactory("strategies", reqStrategies)
+	registerFactory(TypeStrategies, reqStrategies)
 	expvar.Register(strategiesCounter)
 }
 

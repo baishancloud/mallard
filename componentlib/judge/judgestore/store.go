@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/baishancloud/mallard/componentlib/judge/judgestore/filter"
 	"github.com/baishancloud/mallard/corelib/expvar"
@@ -151,8 +152,19 @@ func ressembleMetrics(metrics []*models.Metric) map[string][]*models.Metric {
 	filterLock.RLock()
 	defer filterLock.RUnlock()
 
+	nowUnix := time.Now().Unix()
 	tmp := make(map[string][]*models.Metric)
 	for _, m := range metrics {
+		filter := filters[m.Name]
+		if filter != nil {
+			expire := filter.Expire
+			if expire < 1 {
+				expire = DefaultExpireDuration
+			}
+			if nowUnix-m.Time > int64(expire*10) {
+				continue
+			}
+		}
 		tmp[m.Name] = append(tmp[m.Name], m)
 	}
 	for metric, values := range tmp {

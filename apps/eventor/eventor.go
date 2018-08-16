@@ -59,7 +59,13 @@ func main() {
 		ServiceVersion: version,
 		ServiceBuild:   BuildTime,
 	})
-	configapi.SetIntervals([]string{"strategies", "endpoints", "expressions", "sync-hostservice"})
+	configapi.SetIntervals(
+		configapi.TypeStrategies,
+		configapi.TypeEndpoints,
+		configapi.TypeExpressions,
+		configapi.TypeHostInfos,
+		configapi.TypeSyncHostService,
+	)
 	go configapi.Intervals(time.Minute)
 
 	redisdata.SetClient(queueCli, cacheCli)

@@ -16,8 +16,12 @@ var (
 	expsCounter = expvar.NewBase("csdk.expressions")
 )
 
+const (
+	TypeExpressions = "expressions"
+)
+
 func init() {
-	registerFactory("expressions", reqExpressions)
+	registerFactory(TypeExpressions, reqExpressions)
 	expvar.Register(expsCounter)
 }
 

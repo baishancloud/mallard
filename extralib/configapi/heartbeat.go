@@ -17,10 +17,15 @@ var (
 	heartbeatSyncOnceCount = expvar.NewBase("csdk.heartbeat_once")
 )
 
+const (
+	TypeSyncHeartbeat   = "heartbeat"
+	TypeSyncHostService = "sync-hostservice"
+)
+
 func init() {
 	expvar.Register(heartbeatSyncOnceCount)
-	registerFactory("heartbeat", syncHeartbeat)
-	registerFactory("sync-hostservice", syncHostService)
+	registerFactory(TypeSyncHeartbeat, syncHeartbeat)
+	registerFactory(TypeSyncHostService, syncHostService)
 }
 
 var (

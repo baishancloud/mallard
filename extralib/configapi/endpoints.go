@@ -17,9 +17,16 @@ var (
 	hostsLock  sync.RWMutex
 )
 
+const (
+	// TypeEndpoints is request type of endpoints data
+	TypeEndpoints = "endpoints"
+	// TypeHostInfos is request type of request infos
+	TypeHostInfos = "hostinfos"
+)
+
 func init() {
-	registerFactory("endpoints", reqEndpoints)
-	registerFactory("hostinfos", reqHostInfos)
+	registerFactory(TypeEndpoints, reqEndpoints)
+	registerFactory(TypeHostInfos, reqHostInfos)
 }
 
 func reqEndpoints() {
