@@ -21,11 +21,10 @@ var (
 	commandFile string
 	actionFile  string
 	msggFile    string
-	msggFileWay string
 )
 
 // SetFiles sets files
-func SetFiles(cmd, action, msgg, fileway string) {
+func SetFiles(cmd, action, msgg string) {
 	commandFile = cmd
 	if _, err := os.Stat(commandFile); err != nil {
 		log.Warn("stat-cmd-file-error", "error", err)
@@ -41,16 +40,10 @@ func SetFiles(cmd, action, msgg, fileway string) {
 		log.Warn("stat-msgg-file-error", "error", err)
 		msggFile = ""
 	}
-	msggFileWay = fileway
-	if _, err := os.Stat(msggFileWay); err != nil {
-		log.Warn("stat-msgg-fileway-error", "error", err)
-		msggFileWay = ""
-	}
 }
 
 var (
-	log = zaplog.Zap("msgg")
-
+	log          = zaplog.Zap("msgg")
 	requests     = make(map[string]map[int64]*msggRequest)
 	requestsLock sync.RWMutex
 )

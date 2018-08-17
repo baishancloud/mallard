@@ -13,6 +13,8 @@ var (
 	alarmLowQueue  []string
 	alarmHighQueue []string
 	popStopFlag    int64
+
+	alertSubscribeQueue string
 )
 
 // EventRecord is record that reading from redis alarm queue
@@ -21,10 +23,11 @@ type EventRecord struct {
 	IsHigh bool
 }
 
-// SetAlarmQueues sets alarm Queues
-func SetAlarmQueues(low, high []string) {
-	alarmLowQueue = low
-	alarmHighQueue = high
+// SetAlarms sets alarms options
+func SetAlarms(lowQueue, highQueue []string, subKey string) {
+	alarmLowQueue = lowQueue
+	alarmHighQueue = highQueue
+	alertSubscribeQueue = subKey
 }
 
 // Pop pops events from alarm queue
@@ -82,4 +85,18 @@ func popQueue(queues []string) (*models.EventFull, error) {
 // StopPop stops pop operation
 func StopPop() {
 	atomic.StoreInt64(&popStopFlag, 1)
+}
+
+// ToSubscrible adds eid to subscribe
+func ToSubscrible(eid string) {
+	if alertSubscribeQueue == "" {
+		return
+	}
+	queueCli.LPush(alertSubscribeQueue, eid)
+	llen := queueCli.LLen(alertSubscribeQueue).Val()
+	log.Debug("lpush", "queue", alertSubscribeQueue, "eid", eid, "llen", llen)
+	if llen > 1e4 {
+		queueCli.LTrim(alertSubscribeQueue, 50, -1)
+		log.Debug("ltrim", "queue", alertSubscribeQueue)
+	}
 }

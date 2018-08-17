@@ -34,6 +34,7 @@ Packager: fuxiaohei
 %install
 cp %{srcDir}/%{appName} %{_builddir}/%{package}
 install -d %{buildroot}/usr/local/mallard/%{destDir}/var
+install -d %{buildroot}/usr/local/mallard/%{destDir}/datalogs
 install -d %{buildroot}/etc/logrotate.d
 install -m 755 %{_builddir}/%{package} %{buildroot}/usr/local/mallard/%{destDir}/%{appName}
 install -m 644 %{srcDir}/%{appName}-config.json %{buildroot}/usr/local/mallard/%{destDir}/config.example.json

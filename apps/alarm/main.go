@@ -27,8 +27,6 @@ var (
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("alarm")
-
-	statsDumpFile = "alarm_stats.json"
 )
 
 func prepare() {
@@ -45,39 +43,36 @@ func prepare() {
 func main() {
 	prepare()
 
-	redisCli, err := initRedis(cfg.RedisAddr, "", 0, time.Second*5)
+	redisCli, err := initRedis(cfg.Redis.Addr, "", 0, time.Second*10)
 	if err != nil {
 		log.Fatal("init-redis-fail", "error", err)
 	}
 
-	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetHostService(&models.HostService{
-		Hostname:       utils.HostName(),
-		IP:             utils.LocalIP(),
-		ServiceName:    "mallard2-alarm",
-		ServiceVersion: version,
-		ServiceBuild:   BuildTime,
+	configapi.SetForInterval(configapi.IntervalOption{
+		Types: []string{configapi.TypeAlarmsRaw, configapi.TypeAlarmRequests, configapi.TypeSyncHostService},
+		Addr:  cfg.Center.Addr,
+		Role:  "mallard2-alarm",
+		Service: &models.HostService{
+			Hostname:       utils.HostName(),
+			IP:             utils.LocalIP(),
+			ServiceName:    "mallard2-alarm",
+			ServiceVersion: version,
+			ServiceBuild:   BuildTime,
+		},
 	})
-	configapi.SetIntervals([]string{"alarms", "alarm-requests", "sync-hostservice"})
 	go configapi.Intervals(time.Second * 30)
 
-	msggcall.SetFiles(cfg.CommandFile, cfg.ActionFile, cfg.MsggFile, cfg.MsggFileWay)
-	msggcall.SetDirLayout(cfg.MsggFileLayout)
-	msggcall.CallFileExpiry = cfg.MsggFileWayExpire
-	go msggcall.ScanRequests(time.Second*time.Duration(cfg.MsggTicker), cfg.MsggMergeLevel, cfg.MsggMergeSize)
-	go msggcall.SyncPrintCount("mallard2_alarm_msgg_users", time.Hour, cfg.StatMsggUserFile)
+	// set msgg
+	msggcall.SetFiles(cfg.Msgg.CommandFile, cfg.Msgg.ActionFile, cfg.Msgg.File)
+	msggcall.SetFileway(cfg.MsggFileway.File, cfg.MsggFileway.Layout, cfg.MsggFileway.Expire)
+	go msggcall.ScanRequests(time.Second*time.Duration(cfg.Msgg.Ticker), cfg.Msgg.MergeLevel, cfg.Msgg.MergeSize)
+	go msggcall.SyncExpvars("mallard2_alarm_msgg_users", time.Hour, cfg.Stats.MsggUserFile)
 
+	// set redis data
 	redisdata.SetClient(redisCli, nil)
-	redisdata.SetAlarmQueues(cfg.LowQueues, cfg.HighQueues)
-	redisdata.SetAlertSubscribe(cfg.AlarmSubscribeKey)
+	redisdata.SetAlarms(cfg.Redis.LowQueues, cfg.Redis.HighQueues, cfg.Redis.SubscribeKey)
 	eventCh := make(chan redisdata.EventRecord, 1e4)
 	go redisdata.Pop(eventCh, time.Second)
-
-	if cfg.Debug {
-		// run pprof when set debug
-		log.Info("start-pprof")
-		go http.ListenAndServe("127.0.0.1:49999", nil)
-	}
 
 	alertprocess.Register(redisdata.Alert, msggcall.Call)
 
@@ -87,12 +82,12 @@ func main() {
 			log.Fatal("init-db-fail", "error", err)
 		}
 		alertdata.SetDB(db)
-		alertdata.ReadProblems(cfg.AlarmsDumpFile)
+		alertdata.ReadProblems(cfg.ProblemsDumpFile)
 		go alertdata.StreamAlert()
 		alertprocess.Register(alertdata.Alert)
 
-		alertdata.SetStats("mallard2_alarm_stat", statsDumpFile)
-		go alertdata.ScanStat(time.Minute, cfg.StatMetricDuration, cfg.StatMetricFile)
+		alertdata.SetStats("mallard2_alarm_stat", cfg.Stats.DumpFile)
+		go alertdata.ScanStat(time.Minute, cfg.Stats.MetricDuration, cfg.Stats.MetricFile)
 	} else {
 		log.Info("db-disabled")
 	}
@@ -101,12 +96,18 @@ func main() {
 
 	go expvar.PrintAlways("mallard2_alarm_perf", cfg.PerfFile, time.Minute)
 
+	if cfg.Debug {
+		// run pprof when set debug
+		log.Info("start-pprof")
+		go http.ListenAndServe("127.0.0.1:49999", nil)
+	}
+
 	osutil.Wait()
 
 	redisdata.StopPop()
 	redisCli.Close()
 
-	alertdata.DumpProblems(cfg.AlarmsDumpFile)
+	alertdata.DumpProblems(cfg.ProblemsDumpFile)
 
 	log.Sync()
 }

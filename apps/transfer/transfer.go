@@ -39,32 +39,32 @@ func main() {
 	prepare()
 
 	// set center
-	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetIntervals([]string{"endpoints", "heartbeat"})
-	go configapi.Intervals(time.Second * 20)
+	configapi.SetAPI(cfg.Center.Addr)
+	configapi.SetIntervals(configapi.TypeEndpoints, configapi.TypeSyncHeartbeat)
+	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
 	// set token
 	go httptoken.SyncVerifier(cfg.TokenFile, time.Second*15)
 
 	// prepare queues
-	mQueue := queues.NewQueue(1e6, "_dump/metrics")
+	mQueue := queues.NewQueue(1e6, cfg.Store.DumpDir)
 	go mQueue.ScanDump(time.Minute, func(res queues.ScanDumpResult) {
 		log.Info("read-metrics-dump", "dump", res)
 	})
-	evtQueue := queues.NewQueue(1e6, "_dump/events")
+	evtQueue := queues.NewQueue(1e6, cfg.Eventor.DumpDir)
 	go evtQueue.ScanDump(time.Minute, func(res queues.ScanDumpResult) {
 		log.Info("read-events-dump", "dump", res)
 	})
 
 	// init event-sender
-	eventsender.SetURLs(cfg.EventorAddr)
+	eventsender.SetURLs(cfg.Eventor.Addrs)
 	go eventsender.ProcessQueue(evtQueue, 200)
 
 	// init http server
 	transferhandler.SetQueues(mQueue, evtQueue)
 	go httputil.Listen(cfg.HTTPAddr, transferhandler.Create(cfg.IsPublic))
 
-	go expvar.PrintAlways("mallard2_eventor_perf", cfg.PerfFile, time.Minute)
+	go expvar.PrintAlways("mallard2_transfer_perf", cfg.PerfFile, time.Minute)
 
 	osutil.Wait()
 

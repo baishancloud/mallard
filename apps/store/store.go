@@ -26,7 +26,11 @@ var (
 )
 
 func prepare() {
-	osutil.Flags(version, BuildTime, nil)
+	osutil.Flags(version, BuildTime, map[string]interface{}{
+		"config":   cfg,
+		"transfer": transferCfg,
+		"influxdb": influxCfg,
+	})
 	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
 
 	//utils.WriteConfigFile(configFile, cfg)

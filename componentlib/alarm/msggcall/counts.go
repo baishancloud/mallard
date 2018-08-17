@@ -8,6 +8,7 @@ import (
 
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 )
 
 var (
@@ -80,31 +81,24 @@ func calculateUserCount(req *msggRequest) {
 	}
 }
 
-var (
-	countMetric string
-)
-
-// SyncPrintCount starts prints counters to file
-func SyncPrintCount(metricName string, interval time.Duration, file string) {
+// SyncExpvars starts prints counters to file
+func SyncExpvars(metricName string, interval time.Duration, file string) {
 	if metricName == "" || interval < time.Second {
 		return
 	}
 	log.Debug("init-user-counts", "interval", int(interval.Seconds()), "file", file)
-	countMetric = metricName
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		<-ticker.C
-		metrics := userCountsMetrics()
+	fn := func() {
+		metrics := userCountsMetrics(metricName)
 		log.Info("user-counts", "counts", len(metrics))
 		if file != "" {
 			b, _ := json.Marshal(metrics)
 			ioutil.WriteFile(file, b, 0644)
 		}
 	}
+	utils.TickerThen(interval, fn)
 }
 
-func userCountsMetrics() []*models.Metric {
+func userCountsMetrics(metricName string) []*models.Metric {
 	userCountsLock.RLock()
 	defer userCountsLock.RUnlock()
 
@@ -112,7 +106,7 @@ func userCountsMetrics() []*models.Metric {
 	metrics := make([]*models.Metric, 0, len(userCounts))
 	for _, count := range userCounts {
 		metric := &models.Metric{
-			Name:  countMetric,
+			Name:  metricName,
 			Time:  nowUnix,
 			Value: float64(count.Count.Diff()),
 			Tags: map[string]string{

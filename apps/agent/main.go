@@ -51,6 +51,7 @@ func main() {
 	eventsQueue := make(chan []*models.Event, 1e3)
 	errorQueue := make(chan error, 1e3)
 
+	// set transfer
 	transfer.SetURLs(cfg.Transfer.FullURLs(serverinfo.Hostname()), cfg.Transfer.APIs)
 	configSyncOpt := transfer.SyncOption{
 		Interval:  time.Second * time.Duration(cfg.Transfer.ConfigInterval),
@@ -86,25 +87,30 @@ func main() {
 		}
 	}
 
+	// set processer
 	processor.Register(transfer.Metrics, judgeFn, logutil.Write)
 	processor.RegisterEvent(transfer.Events)
-
 	go processor.Process(metricsQueue, eventsQueue, errorQueue)
 
+	// set system data collector
 	go syscollector.Collect(cfg.Collector.Prefix,
 		time.Second*time.Duration(cfg.Collector.Interval),
 		metricsQueue, errorQueue)
 
+	// set plugins runner
 	go plugins.Exec(metricsQueue)
 	go plugins.SyncScan(time.Minute)
 
+	// set httpserver
 	httpserver.SetQueue(metricsQueue)
 	go httputil.Listen(cfg.Server.Addr, httpserver.CreateHandlers())
 
+	// set logutils
 	logutil.SetReadDir(cfg.Logutil.ReadDir)
 	logutil.SetWriteFile(cfg.Logutil.WriteFile, cfg.Logutil.CleanDays, cfg.Logutil.GzipDays)
 	go logutil.ReadInterval(time.Second*time.Duration(cfg.Logutil.ReadInterval), metricsQueue)
 
+	// set expvars
 	go expvar.PrintAlways("mallard2_agent_perf", cfg.PerfFile, time.Minute*2)
 
 	osutil.Wait()

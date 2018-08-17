@@ -42,7 +42,7 @@ func main() {
 
 	// set center
 	configapi.SetAPI(cfg.Center.Addr)
-	configapi.SetIntervals([]string{"expressions", "strategies"})
+	configapi.SetIntervals(configapi.TypeStrategies, configapi.TypeExpressions)
 	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
 	queue := make(chan []*models.Metric, 1e5)

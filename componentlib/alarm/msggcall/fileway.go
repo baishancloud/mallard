@@ -7,14 +7,17 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/baishancloud/mallard/corelib/expvar"
 )
 
 var (
-	reqsFileLayout string
-	workDir, _     = os.Getwd()
+	msggFileWay       string
+	msggFilewayExpire int64 = 3600
+	reqsFileLayout    string
+	workDir, _        = os.Getwd()
 )
 
 var (
@@ -27,10 +30,23 @@ func init() {
 	expvar.Register(filewayCallCount, filewayCallErrorCount, filewayFilesCount)
 }
 
-// SetDirLayout sets requests file and filename layout
-func SetDirLayout(layout string) {
+const (
+	filewaySuffix = ".alarms.json"
+)
+
+// SetFileway sets message fileway options
+func SetFileway(file, layout string, expire int64) {
+	msggFileWay = file
+	if _, err := os.Stat(msggFileWay); err != nil {
+		log.Warn("stat-msgg-fileway-error", "error", err)
+		msggFileWay = ""
+		return
+	}
 	os.MkdirAll(filepath.Dir(layout), 0755)
-	reqsFileLayout = layout
+	reqsFileLayout = layout + filewaySuffix
+	if expire > 0 {
+		msggFilewayExpire = expire
+	}
 }
 
 // CallFileWay writes requests to file and try to call script to handle the file
@@ -65,11 +81,6 @@ func CallFileWay(reqs []*msggRequest) {
 	}
 }
 
-var (
-	// CallFileExpiry is expire time of call-file
-	CallFileExpiry int64 = 3600
-)
-
 func cleanCallFile() {
 	var count int64
 	dir := filepath.Dir(reqsFileLayout)
@@ -81,7 +92,10 @@ func cleanCallFile() {
 		if info.IsDir() {
 			return nil
 		}
-		if now-info.ModTime().Unix() > CallFileExpiry {
+		if !strings.HasSuffix(fpath, filewaySuffix) {
+			return nil
+		}
+		if now-info.ModTime().Unix() > msggFilewayExpire {
 			log.Info("callfile-remove", "file", fpath)
 		} else {
 			count++

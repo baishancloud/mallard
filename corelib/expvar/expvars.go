@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -121,7 +120,7 @@ func printFunc(file string, metricName string, step int) func() {
 				Step:   step,
 			}
 			b, _ := json.Marshal([]*models.Metric{metric})
-			ioutil.WriteFile(file, b, os.ModePerm)
+			ioutil.WriteFile(file, b, 0644)
 		}
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 )
 
@@ -15,8 +17,24 @@ var (
 	centerAPI string
 )
 
-// SetAPI sets api url
-func SetAPI(urlStr string, role ...string) {
+// IntervalOption is option for sync intervals
+type IntervalOption struct {
+	Types   []string
+	Addr    string
+	Role    string
+	Service *models.HostService
+}
+
+// SetForInterval sets options for interval
+func SetForInterval(opt IntervalOption) {
+	setAPI(opt.Addr, opt.Role)
+	setIntervals(opt.Types...)
+	if opt.Service != nil {
+		setHostService(opt.Service)
+	}
+}
+
+func setAPI(urlStr string, role ...string) {
 	centerAPI = strings.TrimSuffix(urlStr, "/")
 	log.Info("set-api", "url", centerAPI)
 	if len(role) > 0 {
@@ -39,8 +57,7 @@ func registerFactory(name string, fn func()) {
 	intervalsLock.Unlock()
 }
 
-// SetIntervals sets valid functions to run interval
-func SetIntervals(names ...string) {
+func setIntervals(names ...string) {
 	intervalsLock.Lock()
 	for _, name := range names {
 		if fn := intervalFactory[name]; fn != nil {
@@ -52,9 +69,7 @@ func SetIntervals(names ...string) {
 
 // Intervals starts to run intervals
 func Intervals(interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
+	fn := func() {
 		intervalsLock.RLock()
 		for _, fn := range intervals {
 			if fn != nil {
@@ -62,6 +77,6 @@ func Intervals(interval time.Duration) {
 			}
 		}
 		intervalsLock.RUnlock()
-		<-ticker.C
 	}
+	utils.Ticker(interval, fn)
 }

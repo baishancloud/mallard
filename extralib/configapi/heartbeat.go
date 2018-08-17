@@ -104,9 +104,7 @@ var (
 	currentHostService *models.HostService
 )
 
-// SetHostService sets host services to sync
-// only support one service in once
-func SetHostService(svc *models.HostService) {
+func setHostService(svc *models.HostService) {
 	currentHostService = svc
 }
 

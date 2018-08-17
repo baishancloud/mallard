@@ -38,11 +38,10 @@ var testEventFull = &models.EventFull{
 
 func TestSetFiles(t *testing.T) {
 	Convey("SetFiles", t, func() {
-		SetFiles("a.sh", "b.sh", "test.sh", "d.sh")
+		SetFiles("a.sh", "b.sh", "test.sh")
 		So(commandFile, ShouldBeEmpty)
 		So(actionFile, ShouldBeEmpty)
 		So(msggFile, ShouldEqual, "test.sh")
-		So(msggFileWay, ShouldBeEmpty)
 	})
 }
 

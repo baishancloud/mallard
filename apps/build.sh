@@ -66,6 +66,10 @@ const (
 EOF
 
         go build -v -i -o $KEY ./$VALUE/*.go
+        if [ ! -f "$KEY" ]; then
+            echo "build fail"
+            exit 1
+        fi
         ./$KEY -vt
 
         ver=$(./$KEY -v)
@@ -92,9 +96,11 @@ stdout_logfile_maxbytes = 1000MB
 directory = /usr/local/mallard/$dir/
 EOF
         if [ $toType == "tar.gz" ]; then
-            echo "tar $KEY-$ver.tar.gz << $KEY $KEY-config.json $KEY.conf"
-            tar czf $KEY-$ver.tar.gz $KEY $KEY-config.json $KEY.conf
-            rm -rf $KEY $KEY-config.json $KEY.conf
+            mkdir -p ./var
+            echo "this is log directory" >> ./var/readme.txt
+            echo "tar $KEY-$ver.tar.gz << $KEY $KEY-config.json $KEY.conf var/"
+            tar czf $KEY-$ver.tar.gz $KEY $KEY-config.json $KEY.conf var/
+            rm -rf $KEY $KEY-config.json $KEY.conf var/
         fi
         if [ $toType == "rpm" ]; then
 

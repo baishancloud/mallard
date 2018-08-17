@@ -9,6 +9,7 @@ import (
 	"github.com/baishancloud/mallard/corelib/container"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 	client "github.com/influxdata/influxdb/client/v2"
 )
@@ -158,13 +159,11 @@ func SendMetrics(metrics []*models.Metric) {
 	}
 }
 
+// SyncExpvars prints expvars in time loop
 func SyncExpvars(interval time.Duration, file string) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		<-ticker.C
+	utils.TickerThen(interval, func() {
 		genExpvars(file)
-	}
+	})
 }
 
 func genExpvars(file string) {

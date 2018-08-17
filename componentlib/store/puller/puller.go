@@ -11,6 +11,7 @@ import (
 	"github.com/baishancloud/mallard/corelib/container"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 )
 
@@ -27,9 +28,6 @@ var (
 	// queueLengthCount   = expvar.NewBase("queue_length")
 	queuePushCount     = expvar.NewDiff("queue_push")
 	queuePushFailCount = expvar.NewDiff("queue_push_fail")
-	/*"puller_queue.cnt": 10426,
-	"puller_pop.diff": 526297,
-	"puller_batch.cnt": 1749*/
 )
 
 func init() {
@@ -85,12 +83,9 @@ func Stop() {
 
 // SyncExpvars prints exp vars
 func SyncExpvars(duration time.Duration, file string) {
-	ticker := time.NewTicker(duration)
-	defer ticker.Stop()
-	for {
-		<-ticker.C
+	utils.TickerThen(duration, func() {
 		genExpvars(file)
-	}
+	})
 }
 
 func genExpvars(file string) {
