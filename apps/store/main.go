@@ -19,8 +19,6 @@ import (
 var (
 	version                     = "2.5.0"
 	configFile                  = "config.json"
-	transferConfigFile          = "config_transfer.json"
-	influxConfigFile            = "config_influxdb.json"
 	cfg, transferCfg, influxCfg = defaultConfig()
 	log                         = zaplog.Zap("store")
 )
@@ -33,17 +31,14 @@ func prepare() {
 	})
 	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
 
-	//utils.WriteConfigFile(configFile, cfg)
 	if err := utils.ReadConfigFile(configFile, &cfg); err != nil {
 		log.Fatal("config-error", "error", err, "file", configFile)
 	}
-	//utils.WriteConfigFile(transferConfigFile, transferCfg)
-	if err := utils.ReadConfigFile(transferConfigFile, &transferCfg); err != nil {
-		log.Fatal("config-error", "error", err, "file", transferConfigFile)
+	if err := utils.ReadConfigFile(cfg.TransferFile, &transferCfg); err != nil {
+		log.Fatal("config-error", "error", err, "file", cfg.TransferFile)
 	}
-	//utils.WriteConfigFile(influxConfigFile, influxCfg)
-	if err := utils.ReadConfigFile(influxConfigFile, &influxCfg); err != nil {
-		log.Fatal("config-error", "error", err, "file", influxConfigFile)
+	if err := utils.ReadConfigFile(cfg.InfluxdbFile, &influxCfg); err != nil {
+		log.Fatal("config-error", "error", err, "file", cfg.InfluxdbFile)
 	}
 
 	log.SetDebug(cfg.Debug)
@@ -64,7 +59,10 @@ func main() {
 		}
 	}
 
-	go http.ListenAndServe("127.0.0.1:49999", nil)
+	if cfg.Debug {
+		log.Info("start-pprof")
+		go http.ListenAndServe("127.0.0.1:49999", nil)
+	}
 
 	queue := container.NewLimitedList(1e7)
 

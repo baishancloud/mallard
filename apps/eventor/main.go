@@ -38,39 +38,38 @@ func prepare() {
 func main() {
 	prepare()
 
-	queueCli, err := initRedis(cfg.RedisAddr,
-		cfg.RedisPassword,
-		cfg.RedisQueueDb, time.Second*10, 40)
+	queueCli, err := initRedis(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.QueueDB, time.Second*10, 40)
 	if err != nil {
 		log.Fatal("init-redis-fail", "error", err)
 	}
-	cacheCli, err := initRedis(cfg.RedisAddr,
-		cfg.RedisPassword,
-		cfg.RedisCacheDb, time.Second*10, 40)
+	cacheCli, err := initRedis(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.CacheDB, time.Second*10, 40)
 	if err != nil {
 		log.Fatal("init-redis-fail", "error", err)
 	}
 
-	configapi.SetAPI(cfg.CenterAddr)
-	configapi.SetHostService(&models.HostService{
-		Hostname:       utils.HostName(),
-		IP:             utils.LocalIP(),
-		ServiceName:    "mallard2-eventor",
-		ServiceVersion: version,
-		ServiceBuild:   BuildTime,
+	// set config api
+	configapi.SetForInterval(configapi.IntervalOption{
+		Addr: cfg.Center.Addr,
+		Types: []string{configapi.TypeStrategies,
+			configapi.TypeEndpoints,
+			configapi.TypeExpressions,
+			configapi.TypeHostInfos,
+			configapi.TypeSyncHostService},
+		Service: &models.HostService{
+			Hostname:       utils.HostName(),
+			IP:             utils.LocalIP(),
+			ServiceName:    "mallard2-eventor",
+			ServiceVersion: version,
+			ServiceBuild:   BuildTime,
+		},
 	})
-	configapi.SetIntervals(
-		configapi.TypeStrategies,
-		configapi.TypeEndpoints,
-		configapi.TypeExpressions,
-		configapi.TypeHostInfos,
-		configapi.TypeSyncHostService,
-	)
-	go configapi.Intervals(time.Minute)
+	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
+	// set redis client
 	redisdata.SetClient(queueCli, cacheCli)
-	redisdata.SetAlarmLayout(cfg.RedisQueueLayout)
+	redisdata.SetAlarmLayout(cfg.Redis.QueueLayout)
 
+	// set event data
 	eventdata.InitMemory()
 	go eventdata.ScanOutdated(time.Minute * 2)
 	go eventdata.ScanNodata(time.Minute * 2)
@@ -80,18 +79,9 @@ func main() {
 
 	go expvar.PrintAlways("mallard2_eventor_perf", cfg.PerfFile, time.Minute)
 
-	/*etcdapi.MustSetClient([]string{"http://127.0.0.1:2379"}, "", "", time.Second)
-	etcdapi.Register(etcdapi.Service{
-		Name:      "mallard2-eventor",
-		Endpoint:  utils.HostName(),
-		Version:   "2.5.0",
-		BuildTime: "",
-	}, nil, time.Second*10)*/
-
 	osutil.Wait()
 
 	httputil.Close()
-	// etcdapi.Deregister()
 	log.Sync()
 }
 

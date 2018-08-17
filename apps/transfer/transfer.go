@@ -10,6 +10,7 @@ import (
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
@@ -25,13 +26,12 @@ var (
 
 func prepare() {
 	osutil.Flags(version, BuildTime, cfg)
-	log.SetDebug(cfg.Debug)
 	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
 
-	// utils.WriteConfigFile(configFile, cfg)
 	if err := utils.ReadConfigFile(configFile, &cfg); err != nil {
 		log.Fatal("config-error", "error", err)
 	}
+	log.SetDebug(cfg.Debug)
 }
 
 func main() {
@@ -39,12 +39,21 @@ func main() {
 	prepare()
 
 	// set center
-	configapi.SetAPI(cfg.Center.Addr)
-	configapi.SetIntervals(configapi.TypeEndpoints, configapi.TypeSyncHeartbeat)
+	configapi.SetForInterval(configapi.IntervalOption{
+		Addr:  cfg.Center.Addr,
+		Types: []string{configapi.TypeEndpoints, configapi.TypeSyncHeartbeat, configapi.TypeSyncHostService},
+		Service: &models.HostService{
+			Hostname:       utils.HostName(),
+			IP:             utils.LocalIP(),
+			ServiceName:    "mallard2-transfer",
+			ServiceVersion: version,
+			ServiceBuild:   BuildTime,
+		},
+	})
 	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
 	// set token
-	go httptoken.SyncVerifier(cfg.TokenFile, time.Second*15)
+	go httptoken.SyncVerifier(cfg.TokenFile, time.Second*30)
 
 	// prepare queues
 	mQueue := queues.NewQueue(1e6, cfg.Store.DumpDir)
@@ -70,9 +79,7 @@ func main() {
 
 	httputil.Close()
 	eventsender.Stop()
-
 	dump(mQueue, evtQueue)
-
 	log.Sync()
 }
 

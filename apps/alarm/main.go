@@ -31,7 +31,6 @@ var (
 
 func prepare() {
 	osutil.Flags(version, BuildTime, cfg)
-	runtime.GOMAXPROCS(runtime.NumCPU() / 4)
 	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
 
 	if err := utils.ReadConfigFile(configFile, &cfg); err != nil {
@@ -51,7 +50,6 @@ func main() {
 	configapi.SetForInterval(configapi.IntervalOption{
 		Types: []string{configapi.TypeAlarmsRaw, configapi.TypeAlarmRequests, configapi.TypeSyncHostService},
 		Addr:  cfg.Center.Addr,
-		Role:  "mallard2-alarm",
 		Service: &models.HostService{
 			Hostname:       utils.HostName(),
 			IP:             utils.LocalIP(),
@@ -60,7 +58,7 @@ func main() {
 			ServiceBuild:   BuildTime,
 		},
 	})
-	go configapi.Intervals(time.Second * 30)
+	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
 	// set msgg
 	msggcall.SetFiles(cfg.Msgg.CommandFile, cfg.Msgg.ActionFile, cfg.Msgg.File)

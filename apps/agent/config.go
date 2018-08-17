@@ -71,7 +71,7 @@ func (tfr transferConfig) FullURLs(endpoint string) []string {
 func defaultConfig() *config {
 	return &config{
 		Debug:    true,
-		Endpoint: "",
+		Endpoint: utils.HostName(),
 		Core:     2,
 		Server: server{
 			Addr: "127.0.0.1:10699",
@@ -83,6 +83,7 @@ func defaultConfig() *config {
 				"config": "/api/config",
 				"self":   "/api/selfinfo",
 			},
+			Addon: make(map[string][]string),
 			URLs: []string{
 				"http://127.0.0.1:10899",
 			},

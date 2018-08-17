@@ -19,7 +19,7 @@ func ReadConfigFile(file string, v interface{}) error {
 
 // WriteConfigFile writes value to json config file pretty
 func WriteConfigFile(file string, v interface{}) error {
-	b, err := json.MarshalIndent(v, "", "\t")
+	b, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return err
 	}

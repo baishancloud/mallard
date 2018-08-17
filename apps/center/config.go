@@ -12,8 +12,10 @@ type config struct {
 func defaultConfig() config {
 	return config{
 		Debug:          true,
+		PortalDSN:      "root:@tcp(127.0.0.1:3306)/portal",
+		UicDSN:         "root:@tcp(127.0.0.1:3306)/uic",
 		HTTPAddr:       "127.0.0.1:10998",
 		PerfFile:       "performance.json",
-		ReloadInterval: 20,
+		ReloadInterval: 30,
 	}
 }

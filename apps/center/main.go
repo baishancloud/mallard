@@ -24,13 +24,12 @@ var (
 
 func prepare() {
 	osutil.Flags(version, BuildTime, cfg)
-	log.SetDebug(cfg.Debug)
-	runtime.GOMAXPROCS(runtime.NumCPU() / 2)
 	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
 
 	if err := utils.ReadConfigFile(configFile, &cfg); err != nil {
 		log.Fatal("config-error", "error", err)
 	}
+	log.SetDebug(cfg.Debug)
 }
 
 func prepareDB(portalDSN, uicDSN string) (*sqlx.DB, *sqlx.DB, error) {

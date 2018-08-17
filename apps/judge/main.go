@@ -19,11 +19,10 @@ import (
 )
 
 var (
-	version       = "2.5.0"
-	configFile    = "config.json"
-	filterCfgFile = "filter.json"
-	cfg           = defaultConfig()
-	log           = zaplog.Zap("judge")
+	version    = "2.5.0"
+	configFile = "config.json"
+	cfg        = defaultConfig()
+	log        = zaplog.Zap("judge")
 )
 
 func prepare() {
@@ -41,14 +40,23 @@ func main() {
 	prepare()
 
 	// set center
-	configapi.SetAPI(cfg.Center.Addr)
-	configapi.SetIntervals(configapi.TypeStrategies, configapi.TypeExpressions)
+	configapi.SetForInterval(configapi.IntervalOption{
+		Addr:  cfg.Center.Addr,
+		Types: []string{configapi.TypeStrategies, configapi.TypeExpressions},
+		Service: &models.HostService{
+			Hostname:       utils.HostName(),
+			IP:             utils.LocalIP(),
+			ServiceName:    "mallard2-judge",
+			ServiceVersion: version,
+			ServiceBuild:   BuildTime,
+		},
+	})
 	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
 	queue := make(chan []*models.Metric, 1e5)
 
-	judgestore.SetDir(cfg.StoreDir)
-	go filter.SyncFile(filterCfgFile, func(f filter.ForMetrics) {
+	judgestore.SetDir(cfg.Judge.StoreDir)
+	go filter.SyncFile(cfg.Judge.FilterFile, func(f filter.ForMetrics) {
 		judgestore.SetFilters(f)
 	}, time.Minute)
 	judgestore.RunClean()
@@ -56,10 +64,10 @@ func main() {
 	judgehandler.SetQueue(queue)
 	go httputil.Listen(cfg.HTTPAddr, judgehandler.Create())
 
-	multijudge.SetCachedEventsFile("cache_events.dump")
+	multijudge.SetCachedEventsFile(cfg.Judge.DumpFile)
 	multijudge.RegisterFn(judgestore.WriteMetrics, multijudge.Judge)
 	go multijudge.Process(queue)
-	go multijudge.ScanForEvents(time.Second * 20)
+	go multijudge.ScanForEvents(time.Second * time.Duration(cfg.Judge.ScanInterval))
 
 	go expvar.PrintAlways("mallard2_judge_perf", cfg.PerfFile, time.Minute)
 

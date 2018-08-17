@@ -5,7 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
@@ -21,24 +20,16 @@ var (
 type IntervalOption struct {
 	Types   []string
 	Addr    string
-	Role    string
 	Service *models.HostService
 }
 
 // SetForInterval sets options for interval
 func SetForInterval(opt IntervalOption) {
-	setAPI(opt.Addr, opt.Role)
+	centerAPI = strings.TrimSuffix(opt.Addr, "/")
+	log.Info("set-api", "url", centerAPI)
 	setIntervals(opt.Types...)
 	if opt.Service != nil {
 		setHostService(opt.Service)
-	}
-}
-
-func setAPI(urlStr string, role ...string) {
-	centerAPI = strings.TrimSuffix(urlStr, "/")
-	log.Info("set-api", "url", centerAPI)
-	if len(role) > 0 {
-		httputil.SetSpecialRole(role[0])
 	}
 }
 

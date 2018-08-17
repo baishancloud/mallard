@@ -20,6 +20,8 @@ type (
 	// Config is all config
 	Config struct {
 		Debug            bool   `json:"debug"`
+		InfluxdbFile     string `json:"influxdb_file"`
+		TransferFile     string `json:"transfer_file"`
 		PerfFile         string `json:"perf_file"`
 		StatPullerFile   string `json:"stat_puller_file"`
 		StatInfluxdbFile string `json:"stat_influxdb_file"`
@@ -29,6 +31,8 @@ type (
 func defaultConfig() (Config, Transfer, Influx) {
 	return Config{
 			PerfFile:         "performance.json",
+			InfluxdbFile:     "config_influxdb.json",
+			TransferFile:     "config_transfer.json",
 			StatInfluxdbFile: "stat_influxdb.json",
 			StatPullerFile:   "stat_puller.json",
 			Debug:            true,

@@ -21,7 +21,7 @@ func Flags(version string, buildTime string, cfg interface{}) {
 		// ignore it
 	}
 	if *dc {
-		b, _ := json.MarshalIndent(cfg, "", "\t")
+		b, _ := json.MarshalIndent(cfg, "", "  ")
 		fmt.Println(string(b))
 		os.Exit(0)
 	}

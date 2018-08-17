@@ -19,22 +19,13 @@ var (
 			InsecureSkipVerify: true,
 		},
 	}
-	specialRole string
 )
-
-// SetSpecialRole sets special role name
-func SetSpecialRole(name string) {
-	specialRole = name
-}
 
 // GetJSON gets json result from http api
 func GetJSON(url string, timeout time.Duration, v interface{}) (int, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
-	}
-	if specialRole != "" {
-		req.Header.Set("Mallard-Role", specialRole)
 	}
 	client := &http.Client{
 		Transport: transport,
@@ -60,9 +51,6 @@ func GetJSONWithHash(url string, timeout time.Duration, v interface{}) (int, str
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, "", err
-	}
-	if specialRole != "" {
-		req.Header.Set("Mallard-Role", specialRole)
 	}
 	client := &http.Client{
 		Transport: transport,
@@ -103,9 +91,6 @@ func PostReader(url string, timeout time.Duration, reader io.Reader, headers map
 	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
-	}
-	if specialRole != "" {
-		req.Header.Set("Mallard-Role", specialRole)
 	}
 	client := &http.Client{
 		Transport: transport,
