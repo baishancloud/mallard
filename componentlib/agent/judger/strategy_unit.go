@@ -10,8 +10,9 @@ import (
 
 // StrategyUnit is a unit to check strategy in judge
 type StrategyUnit struct {
-	st *models.Strategy
-	op Operator
+	st         *models.Strategy
+	op         Operator
+	tagFilters map[string]TagFilterFunc
 
 	dataQueue map[string][]*models.EventValue
 	lock      sync.RWMutex
@@ -44,6 +45,7 @@ func (s *StrategyUnit) SetStrategy(st *models.Strategy) error {
 	}
 	s.st = st
 	s.op = op
+	s.tagFilters = s.op.Tags()
 	return nil
 }
 
@@ -115,23 +117,20 @@ func (s *StrategyUnit) Check(metric *models.Metric, customHash string) (float64,
 
 // Accept check metric name is suited for this unit
 func (s *StrategyUnit) Accept(metric *models.Metric) bool {
-	if s.st == nil || s.op == nil {
+	if s.st == nil || s.op == nil || s.st.Metric != metric.Name {
 		return false
 	}
-	if s.st.Metric != metric.Name {
+	tagFilters := s.tagFilters
+	if len(tagFilters) == 0 {
+		return true
+	}
+	fullTags := metric.FullTags()
+	if len(fullTags) == 0 {
 		return false
 	}
-	tagFilters := s.op.Tags()
-	if len(tagFilters) > 0 {
-		fullTags := metric.FullTags()
-		if len(fullTags) == 0 {
+	for key, tagFunc := range tagFilters {
+		if !tagFunc(fullTags[key]) {
 			return false
-		}
-		for key, tagFunc := range tagFilters {
-			v := fullTags[key]
-			if !tagFunc(v) {
-				return false
-			}
 		}
 	}
 	return true
