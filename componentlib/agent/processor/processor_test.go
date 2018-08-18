@@ -12,15 +12,14 @@ func TestProccessor(t *testing.T) {
 	Convey("processor", t, func(c C) {
 		mQueue := make(chan []*models.Metric, 1e2)
 		evtQueue := make(chan []*models.Event, 1e2)
-		eQueue := make(chan error, 1e2)
 
 		Register(func(metrics []*models.Metric) {
 			c.So(metrics, ShouldHaveLength, 1)
-		})
+		}, nil)
 		RegisterEvent(func(evts []*models.Event) {
 			c.So(evts, ShouldHaveLength, 1)
 		})
-		Process(mQueue, evtQueue, eQueue)
+		Process(mQueue, evtQueue)
 		mQueue <- []*models.Metric{{
 			Name:     "abc",
 			Value:    1,
@@ -40,6 +39,8 @@ func TestProccessor(t *testing.T) {
 			Name:  "abc",
 			Value: 4,
 		}, new(models.Metric)}
+		mQueue <- []*models.Metric{}
+		close(mQueue)
 
 		evtQueue <- []*models.Event{{}}
 		time.Sleep(time.Second)

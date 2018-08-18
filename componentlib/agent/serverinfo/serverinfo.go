@@ -21,11 +21,12 @@ type (
 		HostnameFirst   string `json:"hostname_first,omitempty"`
 		HostnameAllConf string `json:"hostname_allconf,omitempty"`
 		HostIDAllConf   string `json:"hostid_allconf,omitempty"`
+		useAllConf      bool
 	}
 )
 
 var (
-	svrData *Data
+	svrData = &Data{}
 	log     = zaplog.Zap("serverinfo")
 )
 
@@ -38,25 +39,21 @@ var (
 )
 
 // Scan starts scanning serverinfo
-func Scan(defaultEp string) {
-	Read(defaultEp)
-	log.Info("read", "info", svrData, "use_allconf", UseAllConf)
-	go func() {
-		ticker := time.NewTicker(time.Second * 30)
-		defer ticker.Stop()
-		for {
-			<-ticker.C
-			Read(defaultEp)
-		}
-	}()
+func Scan(defaultEp string, useAllConf bool) {
+	Read(defaultEp, useAllConf)
+	log.Info("read", "info", svrData, "use_allconf", useAllConf)
+	go utils.TickerThen(time.Minute, func() {
+		Read(defaultEp, useAllConf)
+	})
 }
 
 // Read reads current serverinfo
-func Read(defaultEp string) (*Data, error) {
+func Read(defaultEp string, useAllConf bool) (*Data, error) {
 	newData := &Data{
 		IP:            strings.Join(utils.LocalIPs(), ","),
 		HostnameOS:    utils.HostName(),
 		HostnameFirst: defaultEp,
+		useAllConf:    useAllConf,
 	}
 	dat, err := ioutil.ReadFile(cachegroupFile)
 	if err == nil {
@@ -107,20 +104,12 @@ func Read(defaultEp string) (*Data, error) {
 	return svrData, nil
 }
 
-var (
-	// UseAllConf sets to use hostname from allconf
-	UseAllConf = true
-)
-
 // Hostname returns server hostname
 func Hostname() string {
-	if svrData == nil {
-		return ""
-	}
 	if svrData.HostnameFirst != "" {
 		return svrData.HostnameFirst
 	}
-	if UseAllConf && svrData.HostnameAllConf != "" {
+	if svrData.useAllConf && svrData.HostnameAllConf != "" {
 		return svrData.HostnameAllConf
 	}
 	return svrData.HostnameOS
@@ -128,9 +117,6 @@ func Hostname() string {
 
 // Sertypes returns server type string
 func Sertypes() string {
-	if svrData == nil {
-		return ""
-	}
 	if svrData.Sertypes == "" {
 		return svrData.SertypesConf
 	}
@@ -146,25 +132,16 @@ func SetSertypes(sertypes string) {
 
 // Cachegroup returns cache group name
 func Cachegroup() string {
-	if svrData == nil {
-		return ""
-	}
 	return svrData.Cachegroup
 }
 
 // StorageGroup returns storage group name
 func StorageGroup() string {
-	if svrData == nil {
-		return ""
-	}
 	return svrData.StorageGroup
 }
 
 // IP returns ip
 func IP() string {
-	if svrData == nil {
-		return ""
-	}
 	return svrData.IP
 }
 

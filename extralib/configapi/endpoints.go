@@ -1,6 +1,7 @@
 package configapi
 
 import (
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -67,6 +68,17 @@ func reqHostInfos() {
 	hostsInfos = hosts
 	log.Info("req-hostsinfo", "hosts", len(hosts))
 	hostsLock.Unlock()
+}
+
+// GetEndpointSertypes gets endpoint sertypes from cache
+func GetEndpointSertypes(endpoint string) string {
+	hostsLock.RLock()
+	defer hostsLock.RUnlock()
+	args := hostsInfos[endpoint]
+	if len(args) < 6 {
+		return ""
+	}
+	return fmt.Sprint(args[5])
 }
 
 // GetLivedHostInfos gets living hosts after lastTime

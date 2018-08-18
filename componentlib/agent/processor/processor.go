@@ -25,10 +25,9 @@ func Register(pc ...Processor) {
 }
 
 // Process starts running all metrics and errors
-func Process(mCh <-chan []*models.Metric, evtCh <-chan []*models.Event, eCh <-chan error) {
+func Process(mCh <-chan []*models.Metric, evtCh <-chan []*models.Event) {
 	go processMetrics(mCh)
 	go processEvents(evtCh)
-	go processError(eCh)
 }
 
 func processMetrics(mCh <-chan []*models.Metric) {
@@ -55,20 +54,6 @@ func handleMetrics(metrics []*models.Metric) {
 		pc(metrics)
 	}
 	processorLock.RUnlock()
-}
-
-func processError(eCh <-chan error) {
-	for {
-		err, ok := <-eCh
-		if err == nil {
-			continue
-		}
-		log.Warn("fail", "error", err)
-		if !ok {
-			log.Info("error-break")
-			break
-		}
-	}
 }
 
 // EventProcessor is event values processer

@@ -17,11 +17,6 @@ var (
 	tfrClient = NewClient(time.Second*10, 5, "mallard2-agent")
 )
 
-// SetClientHash sets client hash token
-func SetClientHash(hash string) {
-	tfrClient = NewClient(time.Second*10, 5, hash)
-}
-
 // Client is simple client to send data to url
 type Client struct {
 	timeout   time.Duration
@@ -44,9 +39,9 @@ func (ce ClientError) Error() string {
 func NewClient(timeout time.Duration, maxConn int, token string) *Client {
 	tr := &http.Transport{
 		MaxIdleConns:          maxConn,
-		MaxIdleConnsPerHost:   2,
+		MaxIdleConnsPerHost:   3,
 		ResponseHeaderTimeout: timeout,
-		IdleConnTimeout:       time.Second * 30,
+		IdleConnTimeout:       time.Minute,
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
@@ -67,9 +62,6 @@ func (c *Client) GET(url string, headers map[string]string) (*http.Response, tim
 
 // POST post bytes data to url
 func (c *Client) POST(url string, data interface{}, dataLen int) (*http.Response, time.Duration, error) {
-	if data == nil {
-		return nil, 0, nil
-	}
 	buf, err := utils.GzipJSON(data, 10240)
 	if err != nil {
 		return nil, 0, err

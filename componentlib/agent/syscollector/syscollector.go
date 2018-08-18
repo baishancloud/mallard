@@ -37,7 +37,7 @@ var (
 )
 
 // Collect runs sysycollectors , pushes metric values to channel and pushes error values to channel
-func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models.Metric, errorChan chan<- error) {
+func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models.Metric) {
 	log.Info("init", "prefix", prefix, "interval", int(interval.Seconds()))
 
 	// print running system collector
@@ -64,7 +64,7 @@ func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models
 			}
 			values, err := factory()
 			if err != nil {
-				errorChan <- fmt.Errorf("%s, %s", key, err.Error())
+				log.Warn("collect-error", "error", fmt.Errorf("%s, %s", key, err.Error()))
 			}
 			if len(values) > 0 {
 				metrics = append(metrics, values...)

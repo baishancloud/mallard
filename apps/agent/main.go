@@ -44,12 +44,10 @@ func prepare() {
 func main() {
 	prepare()
 
-	serverinfo.UseAllConf = cfg.UseAllConf
-	serverinfo.Scan(cfg.Endpoint)
+	serverinfo.Scan(cfg.Endpoint, cfg.UseAllConf)
 
 	metricsQueue := make(chan []*models.Metric, 1e3)
 	eventsQueue := make(chan []*models.Event, 1e3)
-	errorQueue := make(chan error, 1e3)
 
 	// set transfer
 	transfer.SetURLs(cfg.Transfer.FullURLs(serverinfo.Hostname()), cfg.Transfer.APIs)
@@ -90,14 +88,15 @@ func main() {
 	// set processer
 	processor.Register(transfer.Metrics, judgeFn, logutil.Write)
 	processor.RegisterEvent(transfer.Events)
-	go processor.Process(metricsQueue, eventsQueue, errorQueue)
+	go processor.Process(metricsQueue, eventsQueue)
 
 	// set system data collector
 	go syscollector.Collect(cfg.Collector.Prefix,
 		time.Second*time.Duration(cfg.Collector.Interval),
-		metricsQueue, errorQueue)
+		metricsQueue)
 
 	// set plugins runner
+	plugins.SetDir(cfg.Plugin.Dir, cfg.Plugin.LogDir, nil)
 	go plugins.Exec(metricsQueue)
 	go plugins.SyncScan(time.Minute)
 

@@ -39,7 +39,7 @@ func TestPlugin(t *testing.T) {
 		p, err := NewPlugin("3000_test.py", "test.log", new(fileInfo))
 		So(err, ShouldBeNil)
 
-		So(time.Now().Unix()-p.LastExecTime, ShouldBeLessThan, 3000)
+		So(time.Now().Unix()-p.LastExecTime, ShouldBeLessThan, 3001)
 		So(time.Now().Unix()-p.LastExecTime, ShouldBeGreaterThan, 3000-61)
 		So(p.Cycle, ShouldEqual, 3000)
 		So(p.timeout, ShouldEqual, 2999*time.Second)
@@ -48,10 +48,11 @@ func TestPlugin(t *testing.T) {
 		Convey("plugin.exec", func() {
 			p, err := NewPlugin("tests/10_test.sh", "", new(fileInfo))
 			So(err, ShouldBeNil)
-			metrics, err := p.Exec(parsedAsNew)
+			metrics, err := p.Exec()
 			So(err, ShouldBeNil)
 			So(metrics, ShouldHaveLength, 1)
 			So(p.Hash(), ShouldNotBeBlank)
+			os.RemoveAll("tests_10_test.sh.log")
 		})
 
 		Convey("plugin.nilfileinfo", func() {

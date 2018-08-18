@@ -37,28 +37,27 @@ type SyncOption struct {
 
 // SyncConfig starts config data syncing
 func SyncConfig(opt SyncOption) {
-	ticker := time.NewTicker(opt.Interval)
-	defer ticker.Stop()
-	func() {
-		for {
-			epData, err := getConfig(opt)
-			if err != nil {
-				log.Warn("req-config-fail", "error", err)
-			} else {
-				log.Info("req-config-ok", "hash", epData.Hash, "tfr_time", epData.Time)
-				isUpdate := false
-				if cacheEpData.Hash != epData.Hash {
-					cacheEpData = epData
-					isUpdate = true
-					configChangeCount.Incr(1)
-				}
-				if opt.Func != nil {
-					opt.Func(cacheEpData, isUpdate)
-				}
-			}
-			<-ticker.C
+	utils.Ticker(opt.Interval, func() {
+		requestConfig(opt)
+	})
+}
+
+func requestConfig(opt SyncOption) {
+	epData, err := getConfig(opt)
+	if err != nil {
+		log.Warn("req-config-fail", "error", err)
+	} else {
+		log.Info("req-config-ok", "hash", epData.Hash, "tfr_time", epData.Time)
+		isUpdate := false
+		if cacheEpData.Hash != epData.Hash {
+			cacheEpData = epData
+			isUpdate = true
+			configChangeCount.Incr(1)
 		}
-	}()
+		if opt.Func != nil {
+			opt.Func(cacheEpData, isUpdate)
+		}
+	}
 }
 
 func getConfig(opt SyncOption) (*models.EndpointData, error) {
@@ -129,7 +128,7 @@ func getConfig(opt SyncOption) (*models.EndpointData, error) {
 			Time:     transferTime,
 			Sertypes: sertypes,
 		}
-		if err := utils.UngzipJSON(resp.Body, ep); err != nil {
+		if err = utils.UngzipJSON(resp.Body, ep); err != nil {
 			resp.Body.Close()
 			log.Debug("req-config-once-error", "url", url, "error", err)
 			continue

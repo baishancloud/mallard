@@ -135,7 +135,7 @@ func judgeOnce(metric *models.Metric) []*models.Event {
 		if u == nil {
 			continue
 		}
-		if !u.Accept(metric) {
+		if !u.AcceptTag(metric.FullTags()) {
 			continue
 		}
 		leftValue, status, err := u.Check(metric, "")

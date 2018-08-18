@@ -12,6 +12,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/agent/serverinfo"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 )
 
@@ -36,6 +37,7 @@ func SetDir(dir string, logDir string, runningDir []string) {
 	}
 	pluginDir = dir
 	pluginLogDir = logDir
+	os.MkdirAll(pluginLogDir, 0755)
 	pluginRunDirList = runningDir
 	log.Info("set-dir", "dir", dir, "log_dir", logDir, "running", runningDir)
 	go ScanFiles()
@@ -60,12 +62,7 @@ var (
 
 // SyncScan starts scanning sync
 func SyncScan(interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		ScanFiles()
-		<-ticker.C
-	}
+	utils.Ticker(interval, ScanFiles)
 }
 
 // ScanFiles reads plugins files list to memory
@@ -99,7 +96,7 @@ func ScanFiles() {
 			}
 			plugin := plugins[fpath]
 			if plugin == nil {
-				logFile := filepath.Join(pluginDir, strings.Replace(filepath.ToSlash(fpath), "/", "_", -1)) + ".log"
+				logFile := filepath.Join(pluginLogDir, strings.Replace(filepath.ToSlash(fpath), "/", "_", -1)) + ".log"
 				var err error
 				plugin, err = NewPlugin(fpath, logFile, info)
 				if err != nil {
@@ -166,15 +163,6 @@ func Exec(mCh chan<- []*models.Metric) {
 	}
 }
 
-var (
-	parsedAsNew = false
-)
-
-// SetParsedAsNew sets plugins to parses new metric object
-func SetParsedAsNew(flag bool) {
-	parsedAsNew = flag
-}
-
 func execFiles(mCh chan<- []*models.Metric, now int64) {
 	pluginsLock.RLock()
 	defer pluginsLock.RUnlock()
@@ -183,12 +171,8 @@ func execFiles(mCh chan<- []*models.Metric, now int64) {
 		if plugin.ShouldExec(now) {
 			go func(plugin *Plugin) {
 				st := time.Now()
-				metrics, err := plugin.Exec(parsedAsNew)
+				metrics, err := plugin.Exec()
 				if err != nil {
-					if err == ErrPluginExecBlank {
-						log.Debug("exec-0-data", "file", plugin.File)
-						return
-					}
 					log.Warn("exec-error", "file", plugin.File, "error", err)
 					pluginsFailCount.Incr(1)
 					return

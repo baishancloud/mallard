@@ -13,14 +13,15 @@ type (
 		DumpDir string `json:"dump_dir"`
 	}
 	config struct {
-		Debug     bool          `json:"debug"`
-		Center    centerConfig  `json:"center"`
-		Eventor   eventorConfig `json:"eventor"`
-		Store     metricConfig  `json:"store"`
-		HTTPAddr  string        `json:"http_addr"`
-		TokenFile string        `json:"token_file"`
-		IsPublic  bool          `json:"is_public"`
-		PerfFile  string        `json:"perf_file"`
+		Debug        bool          `json:"debug"`
+		Center       centerConfig  `json:"center"`
+		Eventor      eventorConfig `json:"eventor"`
+		Store        metricConfig  `json:"store"`
+		HTTPAddr     string        `json:"http_addr"`
+		TokenFile    string        `json:"token_file"`
+		IsPublic     bool          `json:"is_public"`
+		IsAuthorized bool          `json:"is_authorized"`
+		PerfFile     string        `json:"perf_file"`
 	}
 )
 
@@ -38,8 +39,9 @@ func defaultConfig() config {
 		Store: metricConfig{
 			DumpDir: "_dump/metric",
 		},
-		HTTPAddr:  "0.0.0.0:10899",
-		TokenFile: "tokens.json",
-		IsPublic:  false,
+		HTTPAddr:     "0.0.0.0:10899",
+		TokenFile:    "tokens.json",
+		IsPublic:     false,
+		IsAuthorized: true,
 	}
 }

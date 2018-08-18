@@ -2,8 +2,8 @@ package transferhandler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,7 +24,7 @@ func init() {
 func configGet(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	configReqQPS.Incr(1)
 
-	rw.Header().Set("Transfer-Time", fmt.Sprint(time.Now().Unix()))
+	rw.Header().Set("Transfer-Time", strconv.FormatInt(time.Now().Unix(), 10))
 	endpoint, hash := r.FormValue("endpoint"), r.FormValue("hash")
 	if endpoint == "" {
 		endpoint = r.FormValue("ep") // try ep param
@@ -59,6 +59,7 @@ func configGet(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	isGzip := (r.FormValue("gzip") != "")
 	rw.Header().Set("Content-Hash", hash)
+	rw.Header().Set("Transfer-Sertypes", configapi.GetEndpointSertypes(endpoint))
 	httputil.ResponseJSON(rw, mData, isGzip, false)
 	log.Debug("config-get-ok", "ep", endpoint, "hash", hash, "gzip", isGzip)
 }

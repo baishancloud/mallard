@@ -17,13 +17,14 @@ var (
 )
 
 // Create creates transfer handler
-func Create(isPublic bool) http.Handler {
+func Create(isPublic bool, isAuthorized bool) http.Handler {
 	r := httprouter.New()
-	r.POST("/api/metric", buildAuthorized(metricsRecv))
+	r.POST("/api/metric", buildAuthorized(metricsRecv, isAuthorized))
+	r.POST("/api/event", buildAuthorized(eventsRecv, isAuthorized))
 	r.GET("/api/config", (configGet))
-	r.GET("/api/metric_pop", buildAuthorized(metricsPopOld))
-	r.GET("/api/metric/pop", buildAuthorized(metricsPop))
-	r.POST("/api/event", buildAuthorized(eventsRecv))
+
+	r.GET("/api/metric_pop", buildAuthorized(metricsPopOld, isAuthorized))
+	// r.GET("/api/metric/pop", buildAuthorized(metricsPop, isAuthorized))
 	/*r.POST("/api/agentself", s.buildAuthorized(s.selfInfo))*/
 
 	if isPublic {
@@ -39,7 +40,10 @@ func Create(isPublic bool) http.Handler {
 	return r
 }
 
-func buildAuthorized(handler httprouter.Handle) httprouter.Handle {
+func buildAuthorized(handler httprouter.Handle, isAuthorized bool) httprouter.Handle {
+	if !isAuthorized {
+		return handler
+	}
 	return func(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		if !httptoken.CheckHeaderResponse(rw, r) {
 			httputil.Response401(rw, r)

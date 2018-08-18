@@ -28,8 +28,32 @@ func TestCleanLog(t *testing.T) {
 				continue
 			}
 			So(err, ShouldBeNil)
+			// os.Remove(filename)
+		}
+		LogCleanDays -= 2
+		CleanOldRotated()
+		for i := 0; i < LogCleanDays+2; i++ {
+			tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
+			filename := fmt.Sprintf(writingFileLayout, tStr)
+			if i >= LogGzipDays {
+				filename = filename + ".gz"
+			}
+			_, err := os.Stat(filename)
+			if i == LogCleanDays+1 {
+				So(err, ShouldNotBeNil)
+				continue
+			}
+			So(err, ShouldBeNil)
 			os.Remove(filename)
 		}
+
+		Convey("rotate", func() {
+			writingFilename = "xxx"
+			tryRotate()
+			So(writingFilename, ShouldEqual, fmt.Sprintf(writingFileLayout, time.Now().Format("20060102")))
+			Stop()
+			os.RemoveAll(writingFilename)
+		})
 	})
 	Convey("set.write", t, func() {
 		SetWriteFile("./tests/test_%s.log", 4, 2)

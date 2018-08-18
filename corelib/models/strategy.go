@@ -27,11 +27,11 @@ type Strategy struct {
 	Operator       string   `json:"op" db:"op"`
 	RightValueStr  string   `json:"-" db:"right_value"` // e.g. < !=
 	RightValue     float64  `json:"rv" db:"-"`          // critical value
-	MaxStep        int      `json:"ms" db:"max_step"`
-	Step           int      `json:"step" db:"step"`
+	MaxStep        int      `json:"ms,omitempty" db:"max_step"`
+	Step           int      `json:"step,omitempty" db:"step"`
 	Priority       int      `json:"priority,omitempty" db:"priority"`
-	Note           string   `json:"note,omitemtpy" db:"note"`
-	TemplateID     int      `json:"tid" db:"template_id"`
+	Note           string   `json:"note,omitempty" db:"note"`
+	TemplateID     int      `json:"tid,omitempty" db:"template_id"`
 	RunBegin       string   `json:"rb,omitempty" db:"run_begin"`
 	RunEnd         string   `json:"re,omitempty" db:"run_end"`
 	NoData         int      `json:"nd,omitempty" db:"no_data"`

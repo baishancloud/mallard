@@ -40,8 +40,13 @@ func main() {
 
 	// set center
 	configapi.SetForInterval(configapi.IntervalOption{
-		Addr:  cfg.Center.Addr,
-		Types: []string{configapi.TypeEndpoints, configapi.TypeSyncHeartbeat, configapi.TypeSyncHostService},
+		Addr: cfg.Center.Addr,
+		Types: []string{
+			configapi.TypeEndpoints,
+			configapi.TypeHostInfos,
+			configapi.TypeSyncHeartbeat,
+			configapi.TypeSyncHostService,
+		},
 		Service: &models.HostService{
 			Hostname:       utils.HostName(),
 			IP:             utils.LocalIP(),
@@ -70,8 +75,9 @@ func main() {
 	go eventsender.ProcessQueue(evtQueue, 200)
 
 	// init http server
+	log.Info("set-http", "is_public", cfg.IsPublic, "is_authorized", cfg.IsAuthorized)
 	transferhandler.SetQueues(mQueue, evtQueue)
-	go httputil.Listen(cfg.HTTPAddr, transferhandler.Create(cfg.IsPublic))
+	go httputil.Listen(cfg.HTTPAddr, transferhandler.Create(cfg.IsPublic, cfg.IsAuthorized), "server.crt", "server.key")
 
 	go expvar.PrintAlways("mallard2_transfer_perf", cfg.PerfFile, time.Minute)
 

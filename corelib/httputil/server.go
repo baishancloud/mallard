@@ -31,14 +31,25 @@ func init() {
 }
 
 // Listen listens http server
-func Listen(addr string, handler http.Handler) {
-	log.Info("init", "addr", addr)
+func Listen(addr string, handler http.Handler, certs ...string) {
 	svr = &http.Server{
 		Addr:              addr,
 		Handler:           handler,
-		ReadTimeout:       time.Second * 30,
-		ReadHeaderTimeout: time.Second * 20,
+		ReadTimeout:       time.Minute,
+		ReadHeaderTimeout: time.Second * 30,
+		WriteTimeout:      time.Minute * 3,
 	}
+	if len(certs) == 2 && certs[0] != "" && certs[1] != "" {
+		log.Info("init-https", "addr", addr)
+		if err := svr.ListenAndServeTLS(certs[0], certs[1]); err != nil {
+			if err == http.ErrServerClosed {
+				return
+			}
+			log.Fatal("listen-error", "error", err)
+		}
+		return
+	}
+	log.Info("init", "addr", addr)
 	if err := svr.ListenAndServe(); err != nil {
 		if err == http.ErrServerClosed {
 			return

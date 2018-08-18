@@ -36,5 +36,11 @@ func TestRead(t *testing.T) {
 			readOnce(ch)()
 			So(ch, ShouldHaveLength, 1)
 		})
+		Convey("read.too.old", func() {
+			os.Chtimes("tests/test.log", now, now.Add(-2*time.Hour))
+			ch := make(chan []*models.Metric, 100)
+			readOnce(ch)()
+			So(ch, ShouldHaveLength, 0)
+		})
 	})
 }

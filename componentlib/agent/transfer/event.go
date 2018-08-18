@@ -35,8 +35,8 @@ func Events(events []*models.Event) {
 	if len(events) > MaxEventsInOnce {
 		idx := len(events) / 2
 		log.Debug("events-split", "all", len(events), "idx", idx)
-		go Events(events[:idx])
-		go Events(events[idx:])
+		Events(events[:idx])
+		Events(events[idx:])
 		return
 	}
 

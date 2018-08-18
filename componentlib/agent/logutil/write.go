@@ -104,11 +104,12 @@ var (
 
 // CleanOldRotated cleans old rotated files
 func CleanOldRotated() {
+	log.Info("do-clean-outdated")
 	for i := LogGzipDays; i <= LogCleanDays; i++ {
 		tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
 		filename := fmt.Sprintf(writingFileLayout, tStr)
 		if _, err := os.Stat(filename); err != nil {
-			log.Debug("gzip-miss-file", "file", filename)
+			log.Info("gzip-miss-file", "file", filename)
 			continue
 		}
 		gzFile := filename + ".gz"
@@ -116,14 +117,14 @@ func CleanOldRotated() {
 		os.Remove(filename)
 		log.Info("do-gzip", "file", filename)
 	}
-	i := LogCleanDays
 	// clean json files
+	i := LogCleanDays
 	for {
 		i++
 		tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
 		filename := fmt.Sprintf(writingFileLayout, tStr)
 		if _, err := os.Stat(filename); err != nil {
-			log.Debug("remove-miss-file", "file", filename)
+			log.Info("remove-miss-file", "file", filename)
 			break
 		}
 		os.Remove(filename)
@@ -131,12 +132,13 @@ func CleanOldRotated() {
 		continue
 	}
 	// clean gzip files
+	i = LogCleanDays
 	for {
 		i++
 		tStr := time.Now().Add(time.Second * time.Duration(-86400*i)).Format("20060102")
 		filename := fmt.Sprintf(writingFileLayout+".gz", tStr)
 		if _, err := os.Stat(filename); err != nil {
-			log.Debug("remove-miss-file", "file", filename)
+			log.Info("remove-miss-file", "file", filename)
 			break
 		}
 		os.Remove(filename)

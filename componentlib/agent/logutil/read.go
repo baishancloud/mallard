@@ -109,15 +109,15 @@ func readOnce(ch chan []*models.Metric) func() {
 		metrics, err := readDirMetrics()
 		if err != nil {
 			log.Warn("read-error", "error", err)
-		} else {
-			mLen := int64(len(metrics))
-			if mLen > 0 {
-				log.Info("read", "len", mLen)
-				if ch != nil {
-					ch <- metrics
-				}
-				readCount.Incr(mLen)
+			return
+		}
+		mLen := int64(len(metrics))
+		if mLen > 0 {
+			log.Info("read", "len", mLen)
+			if ch != nil {
+				ch <- metrics
 			}
+			readCount.Incr(mLen)
 		}
 	}
 }

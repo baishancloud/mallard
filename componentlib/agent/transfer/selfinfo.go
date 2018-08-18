@@ -6,25 +6,15 @@ import (
 
 	"github.com/baishancloud/mallard/componentlib/agent/plugins"
 	"github.com/baishancloud/mallard/componentlib/agent/serverinfo"
+	"github.com/baishancloud/mallard/corelib/utils"
 )
-
-/*
-type Self struct {
-	EpData      *epdata.EpData      `json:"ep"`
-	ServInfo    *svrinfo.Data       `json:"svr"`
-	Config      *agentconfig.Config `json:"cfg"`
-	PluginsHash map[string]string   `json:"plugins"`
-}*/
 
 // SyncSelfInfo starts sending self info in loops
 func SyncSelfInfo(cfgData interface{}) {
 	time.Sleep(time.Minute) // do not send directly
-	ticker := time.NewTicker(time.Hour * 3)
-	defer ticker.Stop()
-	for {
-		<-ticker.C
+	utils.TickerThen(time.Hour*3, func() {
 		SendSelfInfo(cfgData)
-	}
+	})
 }
 
 // SendSelfInfo sends self info to transfer

@@ -23,8 +23,6 @@ func init() {
 }
 
 var (
-	// ErrPluginExecBlank is error of black output after run file
-	ErrPluginExecBlank = errors.New("no-result")
 	// ErrNoFileInfo means fileinfo is nil
 	ErrNoFileInfo = errors.New("no-fileinfo")
 	// ErrWrongFilename means wrong filename
@@ -82,8 +80,12 @@ func (p *Plugin) ShouldExec(t int64) bool {
 	return t-p.LastExecTime >= p.Cycle
 }
 
+var (
+	asNewBytesPrefix = []byte("!!")
+)
+
 // Exec execute plugin file
-func (p *Plugin) Exec(asNew bool) ([]*models.Metric, error) {
+func (p *Plugin) Exec() ([]*models.Metric, error) {
 	p.LastExecTime = time.Now().Unix()
 
 	ctx, cancel := context.WithTimeout(context.Background(), p.timeout)
@@ -113,18 +115,20 @@ func (p *Plugin) Exec(asNew bool) ([]*models.Metric, error) {
 	if stdout.Len() == 0 {
 		return nil, nil
 	}
-	if asNew {
+	outBytes := stdout.Bytes()
+	if bytes.HasPrefix(outBytes, asNewBytesPrefix) {
 		var metrics []*models.Metric
-		if err = json.Unmarshal(stdout.Bytes(), &metrics); err != nil {
-			p.writeLog(stdout.Bytes())
+		outBytes = bytes.TrimPrefix(outBytes, asNewBytesPrefix) // trim prefix bytes
+		if err = json.Unmarshal(outBytes, &metrics); err != nil {
+			p.writeLog(outBytes)
 			return nil, err
 		}
 		return metrics, nil
 	}
 
 	var metricsOld []*models.MetricRaw
-	if err = json.Unmarshal(stdout.Bytes(), &metricsOld); err != nil {
-		p.writeLog(stdout.Bytes())
+	if err = json.Unmarshal(outBytes, &metricsOld); err != nil {
+		p.writeLog(outBytes)
 		return nil, err
 	}
 	if len(metricsOld) == 0 {

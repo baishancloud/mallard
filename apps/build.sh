@@ -98,11 +98,15 @@ EOF
         if [ $toType == "tar.gz" ]; then
             mkdir -p ./var
             echo "this is log directory" >> ./var/readme.txt
-            echo "tar $KEY-$ver.tar.gz << $KEY $KEY-config.json $KEY.conf var/"
-            tar czf $KEY-$ver.tar.gz $KEY $KEY-config.json $KEY.conf var/
-            rm -rf $KEY $KEY-config.json $KEY.conf var/
+            mkdir -p ./datalogs
+            echo "this is cache data directory" >> ./datalogs/readme.txt
+            echo "tar $KEY-$ver.tar.gz << $KEY $KEY-config.json $KEY.conf var/ datalogs/"
+            tar czf $KEY-$ver.tar.gz $KEY $KEY-config.json $KEY.conf var/ datalogs/
+            rm -rf $KEY $KEY-config.json $KEY.conf var/ datalogs/
         fi
         if [ $toType == "rpm" ]; then
+
+            mkdir -p rpms
 
              # set real config file
             realCfgDir=$MALLARD_CFG_PATH
