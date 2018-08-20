@@ -42,8 +42,10 @@ var (
 func Scan(defaultEp string, useAllConf bool) {
 	Read(defaultEp, useAllConf)
 	log.Info("read", "info", svrData, "use_allconf", useAllConf)
+
 	go utils.TickerThen(time.Minute, func() {
 		Read(defaultEp, useAllConf)
+		log.Info("read", "info", svrData, "use_allconf", useAllConf)
 	})
 }
 
