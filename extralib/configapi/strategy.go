@@ -1,7 +1,11 @@
 package configapi
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"html/template"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,10 +19,32 @@ var (
 	strategiesHash     string
 	strategyNodataKeys []string
 	strategies         = make(map[int]*models.Strategy)
+	strategiesTpls     = make(map[int]*StrategyTplCache)
 	strategiesCounter  = expvar.NewBase("csdk.strategies")
 )
 
+type StrategyTplCache struct {
+	Tpl          *template.Template
+	Note         string
+	NoneedRender bool
+}
+
+func (tpl *StrategyTplCache) Render(event *models.EventFull) (string, error) {
+	if tpl.NoneedRender || tpl.Tpl == nil {
+		return tpl.Note, nil
+	}
+	buffer := bytes.NewBuffer(nil)
+	if err := tpl.Tpl.Execute(buffer, event); err != nil {
+		return tpl.Note, err
+	}
+	if buffer.Len() > 0 {
+		return buffer.String(), nil
+	}
+	return tpl.Note, nil
+}
+
 const (
+	// TypeStrategies means strategy type for configapi
 	TypeStrategies = "strategies"
 )
 
@@ -50,8 +76,30 @@ func reqStrategies() {
 		}
 	}
 	strategyNodataKeys = keys
-	log.Info("req-strategies-ok", "hash", hash, "len", len(strategies))
 	strategiesCounter.Set(int64(len(strategies)))
+
+	// reload templates cache
+	tpls := make(map[int]*StrategyTplCache, len(ss))
+	for id, st := range ss {
+		tpl := &StrategyTplCache{
+			Note: st.Note,
+		}
+		if !strings.Contains(st.Note, "{{") {
+			tpl.NoneedRender = true
+			tpls[id] = tpl
+			continue
+		}
+		noteTmpl, err := template.New("note").Funcs(strategyTplFuncs).Parse(st.Note)
+		if err != nil {
+			log.Warn("strategy-tpl-error", "error", err, "id", id, "note", st.Note)
+		} else {
+			tpl.Tpl = noteTmpl
+		}
+		tpls[id] = tpl
+	}
+	strategiesTpls = tpls
+
+	log.Info("req-strategies-ok", "hash", hash, "len", len(strategies))
 	strategiesLock.Unlock()
 }
 
@@ -89,4 +137,18 @@ func GetStrategyNodata() []*models.Strategy {
 		}
 	}
 	return ss
+}
+
+var (
+	ErrStrategyTemplateNil = errors.New("tpl-nil")
+)
+
+func RenderStrategyTpl(id int, event *models.EventFull) (string, error) {
+	strategiesLock.RLock()
+	defer strategiesLock.RUnlock()
+	tplCache := strategiesTpls[id]
+	if tplCache == nil {
+		return "", ErrStrategyTemplateNil
+	}
+	return tplCache.Render(event)
 }
