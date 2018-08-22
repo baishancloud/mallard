@@ -228,9 +228,8 @@ func Handle(event *models.Event, op int, t int64) error {
 	if err != nil {
 		if fullEvent == nil {
 			return err
-		} else {
-			log.Warn("event-handle-error", "status", event.Status.String(), "eid", event.ID, "error", err)
 		}
+		log.Warn("event-handle-error", "status", event.Status.String(), "eid", event.ID, "error", err)
 	}
 	if err = redisdata.SetAlarmingNote(event.ID, note); err != nil {
 		return err

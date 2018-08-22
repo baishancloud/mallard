@@ -1,9 +1,7 @@
 package eventdata
 
 import (
-	"bytes"
 	"errors"
-	"html/template"
 	"strings"
 
 	"github.com/baishancloud/mallard/corelib/models"
@@ -44,7 +42,7 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 			}
 			st2 := new(models.Strategy)
 			*st2 = *st
-			st2.Note, err = renderEventNote(st2.Note, evt)
+			st2.Note, err = renderEventNote(st2.ID, st2.Note, evt)
 			if err != nil {
 				st2.Note = st.Note
 			}
@@ -61,7 +59,7 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 			}
 			exp2 := new(models.Expression)
 			*exp2 = *exp
-			exp2.Note, err = renderEventNote(exp2.Note, evt)
+			exp2.Note, err = renderEventNote(exp2.ID, exp2.Note, evt)
 			if err != nil {
 				exp2.Note = exp.Note
 			}
@@ -72,24 +70,13 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 	return evt, "", nil
 }
 
-func renderEventNote(note string, event *models.EventFull) (string, error) {
-	var result string
-	if !strings.Contains(note, "{{") {
-		result = note
-	} else {
-		buffer := bytes.NewBuffer(nil)
-		noteTmpl, err := template.New("note").Parse(note)
-		if err != nil {
+func renderEventNote(id int, note string, event *models.EventFull) (string, error) {
+	result, err := configapi.RenderStrategyTpl(id, event)
+	if err != nil {
+		if result == "" {
 			result = note
-			return result, err
 		}
-		if err = noteTmpl.Execute(buffer, event); err != nil {
-			result = note
-			return result, err
-		}
-		if buffer.Len() > 0 {
-			result = buffer.String()
-		}
+		return result, err
 	}
 	if strings.HasPrefix(event.ID, "nodata_") {
 		result = "[NODATA]" + result
