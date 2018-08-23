@@ -18,7 +18,9 @@ var (
 )
 
 const (
-	TypeSyncHeartbeat   = "heartbeat"
+	// TypeSyncHeartbeat is request type of syncing endpoint heartbeat
+	TypeSyncHeartbeat = "heartbeat"
+	// TypeSyncHostService is request type if syncing host service
 	TypeSyncHostService = "sync-hostservice"
 )
 

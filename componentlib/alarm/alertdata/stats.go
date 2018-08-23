@@ -46,53 +46,50 @@ func GetStatEvents(beginTime int64) ([]*StatEvent, error) {
 	return events, nil
 }
 
-var (
-	statMetricName string
-	statDumpFile   string
-)
-
-// SetStats sets stats metric name and dump file
-func SetStats(metricName string, dumpFile string) {
-	statMetricName = metricName
-	statDumpFile = dumpFile
+// StatsOption is option for alarms stats
+type StatsOption struct {
+	Interval   time.Duration
+	TimeRange  int64
+	MetricName string
+	MetricFile string
+	CacheFile  string
 }
 
-// ScanStat scans alarm event stats
-func ScanStat(interval time.Duration, timeDiff int64, metricFile string) {
-	if statMetricName == "" || statDumpFile == "" {
-		log.Warn("no-stat-metric-or-dump")
+// ScanStats scans alarm event stats
+func ScanStats(opt StatsOption) {
+	// check options
+	if opt.MetricName == "" || opt.Interval == 0 || opt.TimeRange == 0 {
+		log.Warn("stats-invalid-option", "opt", opt)
 		return
 	}
-	if metricFile == "" || timeDiff == 0 {
-		log.Warn("no-stat-timediff-or-file")
-		return
-	}
-	log.Info("begin-stat", "diff", timeDiff, "interval", int(interval.Seconds()), "file", metricFile)
-	time.Sleep(time.Second * 9)
-	ticker := time.NewTicker(interval)
+	log.Info("begin-stat", "diff", opt.TimeRange, "interval", int(opt.Interval.Seconds()), "metric", opt.MetricName, "file", opt.MetricFile)
+
+	time.Sleep(time.Second * 10)
+	ticker := time.NewTicker(opt.Interval)
 	defer ticker.Stop()
 	for {
 		st := <-ticker.C
 
-		events, err := GetStatEvents(time.Now().Unix() - timeDiff)
+		tUnix := time.Now().Unix() - opt.TimeRange
+		events, err := GetStatEvents(tUnix)
 		if err != nil {
 			log.Warn("get-stats-error", "error", err)
 			alertDbErrorCount.Incr(1)
 			continue
 		}
-		olds := readAlarmStatDump(statDumpFile)
+		olds := readAlarmStatDump(opt.CacheFile)
 		log.Debug("read-olds", "len", len(olds))
 
 		results, metrics := checkAlarmStat(events, olds, st.Unix())
 		for _, m := range metrics {
-			m.Name = statMetricName
+			m.Name = opt.MetricName
 		}
 		log.Debug("check-news", "len", len(results))
 
 		b, _ := json.Marshal(metrics)
-		ioutil.WriteFile(metricFile, b, 0644)
+		ioutil.WriteFile(opt.MetricFile, b, 0644)
 
-		writeAlarmStatDump(results, metricFile)
+		writeAlarmStatDump(results, opt.CacheFile)
 		log.Info("scan-stat-ok", "metrics", len(metrics))
 	}
 }
@@ -142,7 +139,7 @@ func checkAlarmStat(
 				"problem": res.ProblemCount,
 				"happen":  res.HappenCount,
 			},
-			Step: 30,
+			Step: 60,
 		}
 		metrics = append(metrics, m)
 	}

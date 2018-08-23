@@ -22,7 +22,9 @@ var (
 )
 
 const (
-	TypeAlarmsRaw     = "alarms"
+	// TypeAlarmsRaw is request type of alarms raw data
+	TypeAlarmsRaw = "alarms"
+	// TypeAlarmRequests is reques type of alarms users data
 	TypeAlarmRequests = "alarm-requets"
 )
 

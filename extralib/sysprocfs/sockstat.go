@@ -11,7 +11,9 @@ import (
 var (
 	sockstatSockets = []byte("sockets:")
 	sockstatTCP     = []byte("TCP:")
+	sockstatTCP6    = []byte("TCP6:")
 	sockstatUDP     = []byte("UDP:")
+	sockstatUDP6    = []byte("UDP6:")
 	sockstatColon   = []byte(":")
 )
 
@@ -41,7 +43,16 @@ func readLine(r *bufio.Reader) ([]byte, error) {
 
 // Sockstat returns sock stats from /proc/net/sockstat
 func Sockstat() (map[string]int64, error) {
-	fs, err := os.Open("/proc/net/sockstat")
+	return sockStatGet("/proc/net/sockstat")
+}
+
+// Sockstat6 returns sock stats from /proc/net/sockstat6
+func Sockstat6() (map[string]int64, error) {
+	return sockStatGet("/proc/net/sockstat6")
+}
+
+func sockStatGet(file string) (map[string]int64, error) {
+	fs, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +64,9 @@ func Sockstat() (map[string]int64, error) {
 		line, err := readLine(reader)
 		if bytes.HasPrefix(line, sockstatSockets) ||
 			bytes.HasPrefix(line, sockstatTCP) ||
-			bytes.HasPrefix(line, sockstatUDP) {
+			bytes.HasPrefix(line, sockstatTCP6) ||
+			bytes.HasPrefix(line, sockstatUDP) ||
+			bytes.HasPrefix(line, sockstatUDP6) {
 			idx := bytes.Index(line, sockstatColon)
 			line2 := line[idx+1:]
 			values := lineToMap(line2, strings.ToLower(strings.TrimSpace(string(line[:idx]))))

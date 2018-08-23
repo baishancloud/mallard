@@ -15,5 +15,13 @@ func TestSockstat(t *testing.T) {
 		So(stat, ShouldContainKey, "udp_inuse")
 		So(stat, ShouldContainKey, "sockets_used")
 		fmt.Println(stat)
+
+		stat, err = Sockstat6()
+		So(err, ShouldBeNil)
+		So(stat, ShouldContainKey, "tcp6_inuse")
+		So(stat, ShouldContainKey, "udp6_inuse")
+		fmt.Println(stat)
+
+		// So(stat, ShouldContainKey, "sockets_used")
 	})
 }

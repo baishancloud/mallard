@@ -17,6 +17,7 @@ var (
 )
 
 const (
+	// TypeExpressions is request type of expressions
 	TypeExpressions = "expressions"
 )
 

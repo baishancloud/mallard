@@ -23,12 +23,15 @@ var (
 	strategiesCounter  = expvar.NewBase("csdk.strategies")
 )
 
+// StrategyTplCache is object to cache strategy template and note
 type StrategyTplCache struct {
 	Tpl          *template.Template
 	Note         string
 	NoneedRender bool
 }
 
+// Render renders event note with cached tpl
+// if template is error or no need to render, return note directly
 func (tpl *StrategyTplCache) Render(event *models.EventFull) (string, error) {
 	if tpl.NoneedRender || tpl.Tpl == nil {
 		return tpl.Note, nil
@@ -140,9 +143,11 @@ func GetStrategyNodata() []*models.Strategy {
 }
 
 var (
+	// ErrStrategyTemplateNil means template cache is nil
 	ErrStrategyTemplateNil = errors.New("tpl-nil")
 )
 
+// RenderStrategyTpl renders event with proper strategy id
 func RenderStrategyTpl(id int, event *models.EventFull) (string, error) {
 	strategiesLock.RLock()
 	defer strategiesLock.RUnlock()
