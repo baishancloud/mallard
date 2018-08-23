@@ -14,7 +14,6 @@ func TestSockstat(t *testing.T) {
 		So(len(metrics), ShouldEqual, 1)
 
 		So(metrics[0].Name, ShouldEqual, netSockstatMetricName)
-		So(metrics[0].Fields, ShouldHaveLength, 8)
-
+		So(len(metrics[0].Fields), ShouldBeGreaterThanOrEqualTo, 10)
 	})
 }

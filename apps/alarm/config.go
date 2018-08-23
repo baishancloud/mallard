@@ -25,7 +25,7 @@ type (
 		Layout string `json:"layout"`
 	}
 	statsConfig struct {
-		DumpFile       string `json:"dump_file"`
+		CacheFile      string `json:"cache_file"`
 		MetricDuration int64  `json:"metric_duration"`
 		MetricFile     string `json:"metric_file"`
 		MsggUserFile   string `json:"msgg_user_file"`
@@ -79,7 +79,7 @@ func defaultConfig() config {
 		Debug:    true,
 		PerfFile: "performance.json",
 		Stats: statsConfig{
-			DumpFile:       "datalogs/stats.log",
+			CacheFile:      "datalogs/stats.log",
 			MetricDuration: 1800,
 			MetricFile:     "performance_stats.json",
 			MsggUserFile:   "performance_users.json",

@@ -84,8 +84,13 @@ func main() {
 		go alertdata.StreamAlert()
 		alertprocess.Register(alertdata.Alert)
 
-		alertdata.SetStats("mallard2_alarm_stat", cfg.Stats.DumpFile)
-		go alertdata.ScanStat(time.Minute, cfg.Stats.MetricDuration, cfg.Stats.MetricFile)
+		go alertdata.ScanStats(alertdata.StatsOption{
+			Interval:   time.Minute,
+			TimeRange:  cfg.Stats.MetricDuration,
+			MetricFile: cfg.Stats.MetricFile,
+			CacheFile:  cfg.Stats.CacheFile,
+			MetricName: "mallard2_alarm_stat",
+		})
 	} else {
 		log.Info("db-disabled")
 	}

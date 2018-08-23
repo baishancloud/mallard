@@ -27,5 +27,10 @@ func SockstatMetrics() ([]*models.Metric, error) {
 	for k, v := range socks {
 		m.Fields[k] = v
 	}
+	if socks6, err := sysprocfs.Sockstat6(); err == nil {
+		for k, v := range socks6 {
+			m.Fields[k] = v
+		}
+	}
 	return []*models.Metric{m}, nil
 }
