@@ -94,9 +94,7 @@ func NetIfaceStats() (map[string]*NetIfaceStat, error) {
 			continue
 		}
 		last := lastNetIfaceStats[k]
-		if last == nil {
-			lastNetIfaceStats[k] = iface
-		} else {
+		if last != nil {
 			// calculate bandwidth
 			totalBytesDiff := iface.TotalBytes - last.TotalBytes
 			deltaTime := float64(iface.Time - last.Time)
@@ -119,6 +117,7 @@ func NetIfaceStats() (map[string]*NetIfaceStat, error) {
 				}
 			}
 		}
+		lastNetIfaceStats[k] = last
 		resultMap[k] = iface
 	}
 	return resultMap, nil
