@@ -117,7 +117,7 @@ func NetIfaceStats() (map[string]*NetIfaceStat, error) {
 				}
 			}
 		}
-		lastNetIfaceStats[k] = last
+		lastNetIfaceStats[k] = iface
 		resultMap[k] = iface
 	}
 	return resultMap, nil
