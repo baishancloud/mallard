@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	netIfaceMetricName = "netif"
+	netIfaceMetricName         = "netif"
+	netIfacePackagesMetricName = "netif_packages"
 )
 
 func init() {
@@ -48,6 +49,21 @@ func NetIfaceMetrics() ([]*models.Metric, error) {
 			},
 		}
 		ret = append(ret, m)
+
+		if len(netIf.Packages) > 0 {
+			m2 := &models.Metric{
+				Name:   netIfacePackagesMetricName,
+				Value:  float64(netIf.Packages["tx_bytes"] + netIf.Packages["rx_bytes"]),
+				Fields: make(map[string]interface{}, len(netIf.Packages)),
+				Tags: map[string]string{
+					"iface": netIf.Iface,
+				},
+			}
+			for k, v := range netIf.Packages {
+				m2.Fields[k] = v
+			}
+			ret = append(ret, m2)
+		}
 	}
 	return ret, nil
 }

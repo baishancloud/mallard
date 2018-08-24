@@ -12,19 +12,6 @@ import (
 	"github.com/baishancloud/mallard/corelib/container"
 )
 
-/*
-var (
-	popCount      = expvars.NewQPS("store.pop")
-	pushCount     = expvars.NewQPS("store.push")
-	queueLenCount = expvars.NewBase("store.queue_length")
-	popFailCount  = expvars.NewDiff("store.pop_fail")
-	dropCount     = expvars.NewDiff("store.drop")
-)
-
-func init() {
-	expvars.Register(pushCount, popCount, queueLenCount, popFailCount, dropCount)
-}*/
-
 // Queue is common queue to handle packets data
 type Queue struct {
 	queue     container.LimitedQueue
@@ -168,13 +155,6 @@ type ScanDumpResult struct {
 	Count int    `json:"count,omitempty"`
 	File  string `json:"file,omitempty"`
 }
-
-/*
-// String prints value friendly
-func (sr ScanDumpResult) String() string {
-	b, _ := json.Marshal(sr)
-	return string(b)
-}*/
 
 // ScanDump scans dumped file and loads it
 func (q *Queue) ScanDump(interval time.Duration, fn func(ScanDumpResult)) {

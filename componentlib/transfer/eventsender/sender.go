@@ -58,26 +58,29 @@ func SetURLs(rawURLs map[string]string) {
 
 // ProcessQueue handle queues to sender
 func ProcessQueue(queue *queues.Queue, batch int) {
-
-	ticker := time.NewTicker(time.Millisecond * 100)
-	defer ticker.Stop()
 	for {
 		if atomic.LoadInt64(&stopFlag) > 0 {
 			log.Info("stop")
 			return
 		}
-		<-ticker.C
-		packets, err := queue.Pop(batch)
-		if err != nil {
-			log.Warn("pop-error", "error", err)
-			continue
+		if !popAndSend(queue, batch) {
+			time.Sleep(time.Millisecond * 100)
 		}
-		if len(packets) == 0 {
-			continue
-		}
-		wg.Add(1)
-		go sendValues(packets)
 	}
+}
+
+func popAndSend(q *queues.Queue, batch int) bool {
+	packets, err := q.Pop(batch)
+	if err != nil {
+		log.Warn("pop-error", "error", err)
+		return false
+	}
+	if len(packets) == 0 {
+		return false
+	}
+	wg.Add(1)
+	sendValues(packets)
+	return true
 }
 
 func sendValues(packets queues.Packets) {
