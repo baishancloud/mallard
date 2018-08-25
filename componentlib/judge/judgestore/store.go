@@ -63,6 +63,7 @@ func Close() {
 		log.Debug("fh-close", "name", name)
 	}
 	writingFilesLock.Unlock()
+	log.Info("close")
 }
 
 // Write writes values
@@ -154,16 +155,18 @@ func ressembleMetrics(metrics []*models.Metric) map[string][]*models.Metric {
 
 	nowUnix := time.Now().Unix()
 	tmp := make(map[string][]*models.Metric)
+	var (
+		expire int64
+		filter *filter.ForMetric
+	)
 	for _, m := range metrics {
-		filter := filters[m.Name]
-		if filter != nil {
-			expire := filter.Expire
-			if expire < 1 {
-				expire = DefaultExpireDuration
-			}
-			if nowUnix-m.Time > int64(expire*10) {
-				continue
-			}
+		expire = DefaultExpireDuration
+		filter = filters[m.Name]
+		if filter != nil && filter.Expire > 0 {
+			expire = int64(filter.Expire)
+		}
+		if nowUnix-m.Time > int64(expire*10) {
+			continue
 		}
 		tmp[m.Name] = append(tmp[m.Name], m)
 	}
