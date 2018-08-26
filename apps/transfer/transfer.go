@@ -78,7 +78,7 @@ func main() {
 	// init http server
 	log.Info("set-http", "is_public", cfg.IsPublic, "is_authorized", cfg.IsAuthorized)
 	transferhandler.SetQueues(mQueue, evtQueue)
-	go httputil.Listen(cfg.HTTPAddr, transferhandler.Create(cfg.IsPublic, cfg.IsAuthorized), "server.crt", "server.key")
+	go httputil.Listen(cfg.HTTPAddr, transferhandler.Create(cfg.IsPublic, cfg.IsAuthorized), cfg.CertFile, cfg.KeyFile)
 
 	go expvar.PrintAlways("mallard2_transfer_perf", cfg.PerfFile, time.Minute)
 

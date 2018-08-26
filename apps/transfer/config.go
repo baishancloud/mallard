@@ -18,6 +18,8 @@ type (
 		Eventor      eventorConfig `json:"eventor"`
 		Store        metricConfig  `json:"store"`
 		HTTPAddr     string        `json:"http_addr"`
+		KeyFile      string        `json:"key_file"`
+		CertFile     string        `json:"cert_file"`
 		TokenFile    string        `json:"token_file"`
 		IsPublic     bool          `json:"is_public"`
 		IsAuthorized bool          `json:"is_authorized"`
