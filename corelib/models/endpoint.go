@@ -83,3 +83,15 @@ func (hs HostService) Key() string {
 func (hs HostService) ValuesString() string {
 	return hs.Hostname + hs.ServiceName + hs.ServiceVersion + hs.ServiceBuild
 }
+
+const (
+	// AgentStatusIgnore is status of ignored agent
+	AgentStatusIgnore = 3
+)
+
+// HostConfig is config of one host
+type HostConfig struct {
+	HostID      int    `db:"host_id" json:"host_id,omitempty"`
+	Config      string `db:"config" json:"config,omitempty"`
+	AgentStatus int    `db:"agent_status" json:"agent_status,omitempty"`
+}

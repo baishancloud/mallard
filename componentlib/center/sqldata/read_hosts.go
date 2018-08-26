@@ -139,3 +139,28 @@ func ReadHostServices() (map[string]*models.HostService, error) {
 	}
 	return svcList, nil
 }
+
+var (
+	selectHostConfigSQL = "SELECT host_id,config,agent_status FROM host_config"
+)
+
+// ReadHostConfigs reads all host configs
+func ReadHostConfigs() (map[int]*models.HostConfig, error) {
+	rows, err := portalDB.Queryx(selectHostConfigSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results := make(map[int]*models.HostConfig)
+	for rows.Next() {
+		cfg := new(models.HostConfig)
+		if err = rows.StructScan(cfg); err != nil {
+			continue
+		}
+		if cfg.HostID > 0 {
+			results[cfg.HostID] = cfg
+		}
+	}
+	return results, nil
+}

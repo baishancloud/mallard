@@ -46,6 +46,7 @@ func main() {
 			configapi.TypeHostInfos,
 			configapi.TypeSyncHeartbeat,
 			configapi.TypeSyncHostService,
+			configapi.TypeHostConfigs,
 		},
 		Service: &models.HostService{
 			Hostname:       utils.HostName(),

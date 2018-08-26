@@ -3,6 +3,7 @@ package sqldata
 import (
 	"time"
 
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 	"github.com/jmoiron/sqlx"
@@ -80,6 +81,20 @@ func Read() (*Data, error) {
 		return nil, err
 	}
 	log.Debug("read-host-services", "services", len(data.HostServices))
+
+	// read configs
+	configs, err := ReadHostConfigs()
+	if err != nil {
+		return nil, err
+	}
+	data.HostConfigs = make(map[string]*models.HostConfig)
+	for hid, cfg := range configs {
+		name := data.HostNames[hid]
+		if name != "" {
+			data.HostConfigs[name] = cfg
+		}
+	}
+	log.Debug("read-host-configs", "configs", len(configs), "reals", len(data.HostConfigs))
 
 	if data.UserInfos, err = ReadUserInfo(); err != nil {
 		return nil, err

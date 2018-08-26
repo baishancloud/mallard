@@ -2,13 +2,16 @@ package transferhandler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/pprofwrap"
 	"github.com/baishancloud/mallard/corelib/zaplog"
+	"github.com/baishancloud/mallard/extralib/configapi"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -21,10 +24,10 @@ func Create(isPublic bool, isAuthorized bool) http.Handler {
 	r := httprouter.New()
 	r.POST("/api/metric", buildAuthorized(metricsRecv, isAuthorized))
 	r.POST("/api/event", buildAuthorized(eventsRecv, isAuthorized))
-	r.GET("/api/config", (configGet))
+	r.GET("/api/config", buildAuthorized(configGet, isAuthorized))
 
 	r.GET("/api/metric_pop", buildAuthorized(metricsPopOld, isAuthorized))
-	// r.GET("/api/metric/pop", buildAuthorized(metricsPop, isAuthorized))
+	r.GET("/api/metric_pop2", buildAuthorized(metricsPop, isAuthorized))
 	/*r.POST("/api/agentself", s.buildAuthorized(s.selfInfo))*/
 
 	if isPublic {
@@ -40,6 +43,14 @@ func Create(isPublic bool, isAuthorized bool) http.Handler {
 	return r
 }
 
+var (
+	recvIgnoreQPS = expvar.NewQPS("http.recv_ignore")
+)
+
+func init() {
+	expvar.Register(recvIgnoreQPS)
+}
+
 func buildAuthorized(handler httprouter.Handle, isAuthorized bool) httprouter.Handle {
 	if !isAuthorized {
 		return handler
@@ -48,6 +59,19 @@ func buildAuthorized(handler httprouter.Handle, isAuthorized bool) httprouter.Ha
 		if !httptoken.CheckHeaderResponse(rw, r) {
 			httputil.Response401(rw, r)
 			return
+		}
+		// ignore data request for ignored agent, except /api/config
+		if ep := r.Header.Get("Agent-Endpoint"); ep != "" && r.Header.Get("Data-Length") != "" {
+			if configapi.CheckAgentStatus(ep, models.AgentStatusIgnore) {
+				dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
+				rw.WriteHeader(204)
+				log.Debug("recv-ignore",
+					"endpoint", ep,
+					"len", dataLen,
+					"remote", r.RemoteAddr)
+				recvIgnoreQPS.Incr(dataLen)
+				return
+			}
 		}
 		handler(rw, r, ps)
 	}

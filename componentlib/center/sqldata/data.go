@@ -26,6 +26,7 @@ type Data struct {
 	HostLiveInfos map[string][]interface{}       `json:"-"`
 	HostMaintains map[string]int64               `json:"host_maintains,omitempty"`
 	HostServices  map[string]*models.HostService `json:"host_services,omitempty"`
+	HostConfigs   map[string]*models.HostConfig  `json:"host_configs,omitempty"`
 
 	UserInfos      map[int]*models.UserInfo      `json:"user_infos,omitempty"`
 	TeamInfos      map[int]*models.TeamInfo      `json:"team_infos,omitempty"`
@@ -222,4 +223,12 @@ func HostServices() map[string]*models.HostService {
 		return nil
 	}
 	return cachedData.HostServices
+}
+
+// HostConfigs returns host configs
+func HostConfigs() map[string]*models.HostConfig {
+	if cachedData == nil {
+		return nil
+	}
+	return cachedData.HostConfigs
 }

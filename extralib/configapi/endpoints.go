@@ -14,8 +14,9 @@ import (
 var (
 	cacheEndpoints = new(sqldata.Endpoints)
 
-	hostsInfos = make(map[string][]interface{})
-	hostsLock  sync.RWMutex
+	hostsInfos   = make(map[string][]interface{})
+	hostsConfigs = make(map[string]*models.HostConfig)
+	hostsLock    sync.RWMutex
 )
 
 const (
@@ -23,11 +24,14 @@ const (
 	TypeEndpoints = "endpoints"
 	// TypeHostInfos is request type of request infos
 	TypeHostInfos = "hostinfos"
+	// TypeHostConfigs is request type of request configs
+	TypeHostConfigs = "hostconfigs"
 )
 
 func init() {
 	registerFactory(TypeEndpoints, reqEndpoints)
 	registerFactory(TypeHostInfos, reqHostInfos)
+	registerFactory(TypeHostConfigs, reqHostConfigs)
 }
 
 func reqEndpoints() {
@@ -49,6 +53,20 @@ func reqEndpoints() {
 		return
 	}
 	log.Info("req-endpoints-same", "crc", cacheEndpoints.CRC)
+}
+
+func reqHostConfigs() {
+	url := centerAPI + "/api/host/configs?gzip=1"
+	hosts := make(map[string]*models.HostConfig)
+	_, err := httputil.GetJSON(url, time.Second*10, &hosts)
+	if err != nil {
+		log.Warn("req-hostconfigs-error", "error", err)
+		return
+	}
+	hostsLock.Lock()
+	hostsConfigs = hosts
+	log.Info("req-hostconfigs", "hosts", len(hosts))
+	hostsLock.Unlock()
 }
 
 // EndpointConfig gets one endpoint config from cached data
@@ -105,4 +123,15 @@ func GetLivedHostInfos(lastTime int64) map[string][]interface{} {
 // GetAllHostInfos gets all cached hosts info
 func GetAllHostInfos() map[string][]interface{} {
 	return hostsInfos
+}
+
+// CheckAgentStatus checks agents status
+func CheckAgentStatus(endpoint string, status int) bool {
+	hostsLock.RLock()
+	defer hostsLock.RUnlock()
+	cfg := hostsConfigs[endpoint]
+	if cfg == nil {
+		return false
+	}
+	return cfg.AgentStatus == status
 }

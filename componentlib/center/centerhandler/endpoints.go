@@ -226,3 +226,15 @@ func hostServicesList(rw http.ResponseWriter, r *http.Request, _ httprouter.Para
 	httputil.ResponseJSON(rw, infos, isGzip, false)
 	log.Debug("req-host-services-ok", "r", r.RemoteAddr, "is_gzip", isGzip)
 }
+
+func hostConfigsList(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	reqEndpointCount.Incr(1)
+	infos := sqldata.HostConfigs()
+	if len(infos) == 0 {
+		httputil.Response404(rw, r)
+		return
+	}
+	isGzip := (r.FormValue("gzip") == "1")
+	httputil.ResponseJSON(rw, infos, isGzip, false)
+	log.Debug("req-host-configs-ok", "r", r.RemoteAddr, "is_gzip", isGzip)
+}

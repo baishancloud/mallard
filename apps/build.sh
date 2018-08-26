@@ -65,7 +65,7 @@ const (
 )
 EOF
 
-        go build -v -i -o $KEY ./$VALUE/*.go
+        go build -v -i -ldflags "-s -w" -o $KEY ./$VALUE/*.go
         if [ ! -f "$KEY" ]; then
             echo "build fail"
             exit 1
