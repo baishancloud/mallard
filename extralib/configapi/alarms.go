@@ -37,12 +37,12 @@ func init() {
 func reqAlarms() {
 	url := centerAPI + "/api/alarm/all?gzip=1&crc=" + strconv.FormatUint(uint64(cacheAlarms.CRC), 10)
 	alarms := new(sqldata.Alarms)
-	statusCode, err := httputil.GetJSON(url, time.Second*5, alarms)
+	status, err := httputil.GetJSON(url, time.Second*10, alarms)
 	if err != nil {
 		log.Warn("req-alarms-error", "error", err)
 		return
 	}
-	if statusCode == 304 {
+	if status == 304 {
 		log.Info("req-alarms-304")
 		return
 	}
@@ -80,12 +80,12 @@ func AlarmTemplateForAction(actionID int) *models.Template {
 func reqAlarmRequests() {
 	url := centerAPI + "/api/alarm/requests?gzip=1&crc=" + strconv.FormatUint(uint64(cacheAlarms.CRC), 10)
 	requests := make(map[int]map[string]*sqldata.AlarmSendRequest)
-	statusCode, err := httputil.GetJSON(url, time.Second*5, &requests)
+	status, err := httputil.GetJSON(url, time.Second*10, &requests)
 	if err != nil {
 		log.Warn("req-alarm-requests", "error", err)
 		return
 	}
-	if statusCode == 304 {
+	if status == 304 {
 		log.Info("req-alarm-requests-304")
 		return
 	}

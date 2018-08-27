@@ -9,6 +9,7 @@ import (
 	"github.com/baishancloud/mallard/componentlib/center/sqldata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -219,8 +220,7 @@ func hostServicesList(rw http.ResponseWriter, r *http.Request, _ httprouter.Para
 	reqEndpointCount.Incr(1)
 	infos := sqldata.HostServices()
 	if len(infos) == 0 {
-		httputil.Response404(rw, r)
-		return
+		infos = make(map[string]*models.HostService)
 	}
 	isGzip := (r.FormValue("gzip") == "1")
 	httputil.ResponseJSON(rw, infos, isGzip, false)
@@ -231,8 +231,7 @@ func hostConfigsList(rw http.ResponseWriter, r *http.Request, _ httprouter.Param
 	reqEndpointCount.Incr(1)
 	infos := sqldata.HostConfigs()
 	if len(infos) == 0 {
-		httputil.Response404(rw, r)
-		return
+		infos = make(map[string]*models.HostConfig)
 	}
 	isGzip := (r.FormValue("gzip") == "1")
 	httputil.ResponseJSON(rw, infos, isGzip, false)

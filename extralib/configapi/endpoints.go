@@ -58,9 +58,9 @@ func reqEndpoints() {
 func reqHostConfigs() {
 	url := centerAPI + "/api/host/configs?gzip=1"
 	hosts := make(map[string]*models.HostConfig)
-	_, err := httputil.GetJSON(url, time.Second*10, &hosts)
+	status, err := httputil.GetJSON(url, time.Second*10, &hosts)
 	if err != nil {
-		log.Warn("req-hostconfigs-error", "error", err)
+		log.Warn("req-hostconfigs-error", "error", err, "status", status)
 		return
 	}
 	hostsLock.Lock()
@@ -77,9 +77,9 @@ func EndpointConfig(endpoint string) *models.EndpointConfig {
 func reqHostInfos() {
 	url := centerAPI + "/api/endpoints/info?gzip=1"
 	hosts := make(map[string][]interface{})
-	_, err := httputil.GetJSON(url, time.Second*10, &hosts)
+	status, err := httputil.GetJSON(url, time.Second*10, &hosts)
 	if err != nil {
-		log.Warn("req-hostinfos-error", "error", err)
+		log.Warn("req-hostinfos-error", "error", err, "status", status)
 		return
 	}
 	hostsLock.Lock()

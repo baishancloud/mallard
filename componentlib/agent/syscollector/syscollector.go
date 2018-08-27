@@ -12,8 +12,15 @@ import (
 	"github.com/baishancloud/mallard/corelib/zaplog"
 )
 
-// Collector is the function to collect metrics
-type Collector func() ([]*models.Metric, error)
+type (
+	// CollectorFunc is function to collect metrics
+	CollectorFunc func() ([]*models.Metric, error)
+	// Collector contains the function to collect metrics and step
+	Collector struct {
+		Func CollectorFunc
+		Step int
+	}
+)
 
 var (
 	collectorFactory = make(map[string]Collector, 15)
@@ -25,10 +32,17 @@ func init() {
 	expvar.Register(collectCounter)
 }
 
-func registerFactory(name string, c Collector) {
+func registerFactory(name string, c interface{}) {
 	collectorLock.Lock()
-	collectorFactory[name] = c
-	collectorLock.Unlock()
+	defer collectorLock.Unlock()
+	if ct, ok := c.(Collector); ok {
+		collectorFactory[name] = ct
+		return
+	}
+	if cfunc, ok := c.(CollectorFunc); ok {
+		collectorFactory[name] = Collector{cfunc, 1}
+		return
+	}
 }
 
 var (
@@ -52,6 +66,7 @@ func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+	var step int
 	for {
 		if atomic.LoadUint64(&collectorStopFlag) > 0 {
 			return
@@ -59,10 +74,13 @@ func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models
 		metrics := make([]*models.Metric, 0, 100)
 		collectorLock.RLock()
 		for key, factory := range collectorFactory {
-			if factory == nil {
+			if factory.Func == nil {
 				continue
 			}
-			values, err := factory()
+			if factory.Step > 1 && step%factory.Step != 0 {
+				continue
+			}
+			values, err := factory.Func()
 			if err != nil {
 				log.Warn("collect-error", "error", fmt.Errorf("%s, %s", key, err.Error()))
 			}
@@ -80,6 +98,12 @@ func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models
 			metricsChan <- metrics
 			log.Info("collect", "metrics", len(metrics))
 			collectCounter.Incr(int64(len(metrics)))
+		}
+
+		// incr step
+		step++
+		if step == 100 {
+			step = 0
 		}
 		<-ticker.C
 	}

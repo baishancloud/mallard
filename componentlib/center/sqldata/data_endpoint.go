@@ -28,6 +28,7 @@ type Endpoints struct {
 	GroupPlugins  map[string][]string
 	Strategies    map[int]*models.Strategy
 	HostMaintians map[string]int64
+	HostConfigs   map[string]*models.HostConfig
 	CRC           uint32
 
 	cachedConfigs map[string]*models.EndpointConfig
@@ -54,6 +55,12 @@ func (eps *Endpoints) Endpoint(endpoint string) *models.EndpointConfig {
 	}
 	if eps.HostMaintians[endpoint] > 0 {
 		eps.cachedLock.Lock()
+		eps.HostGroupKeys[endpoint] = endpoint
+		eps.cachedConfigs[endpoint] = epData
+		eps.cachedLock.Unlock()
+	} else if agentCfg := eps.HostConfigs[endpoint]; agentCfg != nil && agentCfg.AgentStatus == models.AgentStatusIgnore {
+		eps.cachedLock.Lock()
+		epData.Plugins = []string{"null"}
 		eps.HostGroupKeys[endpoint] = endpoint
 		eps.cachedConfigs[endpoint] = epData
 		eps.cachedLock.Unlock()
@@ -115,6 +122,7 @@ func (eps *Endpoints) BuildAll() {
 		}
 		eps.cachedConfigs[key] = epData
 	}
+	// set maintains agent
 	for endpoint := range eps.HostMaintians {
 		key := eps.HostGroupKeys[endpoint]
 		cacheData := eps.cachedConfigs[key]
@@ -126,6 +134,17 @@ func (eps *Endpoints) BuildAll() {
 		}
 		eps.HostGroupKeys[endpoint] = endpoint
 		eps.cachedConfigs[endpoint] = epData
+	}
+	// set ignored agent
+	for endpoint, agentCfg := range eps.HostConfigs {
+		if agentCfg.AgentStatus == models.AgentStatusIgnore {
+			epData := &models.EndpointConfig{
+				Builtin: &models.EndpointBuiltin{},
+				Plugins: []string{"null"},
+			}
+			eps.HostGroupKeys[endpoint] = endpoint
+			eps.cachedConfigs[endpoint] = epData
+		}
 	}
 }
 
@@ -207,6 +226,7 @@ func (da *Data) buildEndpoints() {
 	eps.GroupStrategy = groupKeyStrategies
 	eps.GroupPlugins = groupPlugins
 	eps.Strategies = make(map[int]*models.Strategy, len(da.Strategies))
+	eps.HostConfigs = da.HostConfigs
 	// simplify strategy data
 	for id, s := range da.Strategies {
 		eps.Strategies[id] = s.ToSimple()

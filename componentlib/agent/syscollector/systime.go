@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	registerFactory("systime", SystimeMetrics)
+	registerFactory("systime", Collector{SystimeMetrics, 2})
 }
 
 var (
