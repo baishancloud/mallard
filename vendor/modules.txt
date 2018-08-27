@@ -1,0 +1,68 @@
+# github.com/StackExchange/wmi v0.0.0-20180725035823-b12b22c5341f
+github.com/StackExchange/wmi
+# github.com/go-ole/go-ole v1.2.1
+github.com/go-ole/go-ole
+github.com/go-ole/go-ole/oleutil
+# github.com/go-redis/redis v6.14.0+incompatible
+github.com/go-redis/redis
+github.com/go-redis/redis/internal
+github.com/go-redis/redis/internal/consistenthash
+github.com/go-redis/redis/internal/hashtag
+github.com/go-redis/redis/internal/pool
+github.com/go-redis/redis/internal/proto
+github.com/go-redis/redis/internal/singleflight
+github.com/go-redis/redis/internal/util
+# github.com/go-sql-driver/mysql v0.0.0-20180719071942-99ff426eb706
+github.com/go-sql-driver/mysql
+# github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c
+github.com/gopherjs/gopherjs/js
+# github.com/influxdata/influxdb v0.0.0-20180816195907-c314fc494e21
+github.com/influxdata/influxdb/models
+github.com/influxdata/influxdb/client/v2
+github.com/influxdata/influxdb/pkg/escape
+# github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
+github.com/jmoiron/sqlx
+github.com/jmoiron/sqlx/reflectx
+# github.com/jtolds/gls v4.2.1+incompatible
+github.com/jtolds/gls
+# github.com/julienschmidt/httprouter v0.0.0-20180715161854-348b672cd90d
+github.com/julienschmidt/httprouter
+# github.com/shirou/gopsutil v0.0.0-20180811135056-68ff0e299699
+github.com/shirou/gopsutil/cpu
+github.com/shirou/gopsutil/disk
+github.com/shirou/gopsutil/host
+github.com/shirou/gopsutil/load
+github.com/shirou/gopsutil/mem
+github.com/shirou/gopsutil/net
+github.com/shirou/gopsutil/process
+github.com/shirou/gopsutil/internal/common
+# github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4
+github.com/shirou/w32
+# github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf
+github.com/smartystreets/assertions
+github.com/smartystreets/assertions/internal/go-render/render
+github.com/smartystreets/assertions/internal/oglematchers
+# github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a
+github.com/smartystreets/goconvey/convey
+github.com/smartystreets/goconvey/convey/reporting
+github.com/smartystreets/goconvey/convey/gotest
+# go.uber.org/atomic v0.0.0-20180806045314-ca680462431f
+go.uber.org/atomic
+# go.uber.org/multierr v0.0.0-20180122172545-ddea229ff1df
+go.uber.org/multierr
+# go.uber.org/zap v0.0.0-20180814183419-67bc79d13d15
+go.uber.org/zap
+go.uber.org/zap/zapcore
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/buffer
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+# golang.org/x/net v0.0.0-20180826012351-8a410e7b638d
+golang.org/x/net/context
+# golang.org/x/sys v0.0.0-20180824143301-4910a1d54f87
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
+golang.org/x/time/rate
+# google.golang.org/appengine v1.1.0
+google.golang.org/appengine/cloudsql
