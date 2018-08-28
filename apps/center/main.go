@@ -8,15 +8,17 @@ import (
 	"github.com/baishancloud/mallard/componentlib/center/sqldata"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/osutil"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
+	"github.com/baishancloud/mallard/extralib/configapi"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
 var (
-	version    = "2.5.2"
+	version    = "2.5.3"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("center")
@@ -66,6 +68,20 @@ func main() {
 	go httputil.Listen(cfg.HTTPAddr, centerhandler.Handlers())
 
 	go expvar.PrintAlways("mallard2_center_perf", cfg.PerfFile, time.Minute)
+
+	// set config api
+	configapi.SetForInterval(configapi.IntervalOption{
+		Addr:  "http://" + cfg.HTTPAddr,
+		Types: []string{configapi.TypeSyncHostService},
+		Service: &models.HostService{
+			Hostname:       utils.HostName(),
+			IP:             utils.LocalIP(),
+			ServiceName:    "mallard2-center",
+			ServiceVersion: version,
+			ServiceBuild:   BuildTime,
+		},
+	})
+	go configapi.Intervals(time.Minute)
 
 	osutil.Wait()
 

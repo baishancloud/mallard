@@ -14,7 +14,7 @@ import (
 
 type (
 	// CollectorFunc is function to collect metrics
-	CollectorFunc func() ([]*models.Metric, error)
+	CollectorFunc = func() ([]*models.Metric, error)
 	// Collector contains the function to collect metrics and step
 	Collector struct {
 		Func CollectorFunc
