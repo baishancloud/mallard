@@ -49,6 +49,7 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 		requestsLock.Lock()
 		var wait int64
 		shouldAlarms := make(map[string]*msggRequest)
+		log.Debug("handle-alarms", "len", len(requests))
 		for eid, reqs := range requests {
 			if redisdata.HasNoAlarmFlag(eid) {
 				for t, msggReq := range reqs {
@@ -71,7 +72,8 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 					// go runMsggRequest(eid, msggReq)
 					delete(requests[eid], t)
 					log.Debug("del-req-timeup", "eid", eid, "t", t)
-					shouldAlarms[eid] = msggReq
+					key := fmt.Sprintf("%s:%d", eid, t)
+					shouldAlarms[key] = msggReq
 				} else {
 					wait++
 					log.Debug("wait-req", "eid", eid, "t", t, "diff", nowUnix-t, "step", msggReq.SendRequest.Step)
@@ -84,6 +86,7 @@ func ScanRequests(interval time.Duration, mergeLevel int, mergeSize int) {
 		}
 		msggWaitCount.Set(wait)
 		requestsLock.Unlock()
+		log.Debug("should-alarms", "len", len(shouldAlarms))
 		handleRequests(shouldAlarms, mergeSize)
 		if count == 100 {
 			count = 0 // reset number
@@ -107,6 +110,7 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 		if req.Recover {
 			key += "-recover"
 		}
+		key += req.SendRequest.Unique()
 		mergedRequests[key] = append(mergedRequests[key], req)
 	}
 	totalReqs := make([]*msggRequest, 0, len(requests))

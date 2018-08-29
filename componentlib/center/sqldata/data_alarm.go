@@ -242,6 +242,14 @@ type (
 	}
 )
 
+func (asr AlarmSendRequest) Unique() string {
+	s := asr.Emails
+	s = append(s, asr.Wechats...)
+	s = append(s, asr.SMSs...)
+	s = append(s, asr.Phones...)
+	return strings.Join(s, "-")
+}
+
 // Line prints send-request to line
 func (asr AlarmSendRequest) Line() string {
 	s := make([]string, 0, 6)

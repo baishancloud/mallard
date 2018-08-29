@@ -2,13 +2,16 @@ package transferhandler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"
+	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/pprofwrap"
 	"github.com/baishancloud/mallard/corelib/zaplog"
+	"github.com/baishancloud/mallard/extralib/configapi"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -25,7 +28,7 @@ func Create(isPublic bool, isAuthorized bool) http.Handler {
 
 	r.GET("/api/metric_pop", buildAuthorized(metricsPopOld, isAuthorized))
 	r.GET("/api/metric_pop2", buildAuthorized(metricsPop, isAuthorized))
-	/*r.POST("/api/agentself", s.buildAuthorized(s.selfInfo))*/
+	r.POST("/api/selfinfo", buildAuthorized(nil, isAuthorized))
 
 	if isPublic {
 		r.GET("/open/ping", buildVerifier(openPing))
@@ -58,7 +61,7 @@ func buildAuthorized(handler httprouter.Handle, isAuthorized bool) httprouter.Ha
 			return
 		}
 		// ignore data request for ignored agent, except /api/config
-		/*if ep := r.Header.Get("Agent-Endpoint"); ep != "" && r.Header.Get("Data-Length") != "" {
+		if ep := r.Header.Get("Agent-Endpoint"); ep != "" && r.Header.Get("Data-Length") != "" {
 			if configapi.CheckAgentStatus(ep, models.AgentStatusIgnore) {
 				dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
 				rw.WriteHeader(204)
@@ -69,8 +72,10 @@ func buildAuthorized(handler httprouter.Handle, isAuthorized bool) httprouter.Ha
 				recvIgnoreQPS.Incr(dataLen)
 				return
 			}
-		}*/
-		handler(rw, r, ps)
+		}
+		if handler != nil {
+			handler(rw, r, ps)
+		}
 	}
 }
 

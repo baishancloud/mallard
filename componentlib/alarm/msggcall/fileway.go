@@ -51,7 +51,7 @@ func SetFileway(file, layout string, expire int64) {
 
 // CallFileWay writes requests to file and try to call script to handle the file
 func CallFileWay(reqs []*msggRequest) {
-	if reqsFileLayout == "" {
+	if reqsFileLayout == "" || msggFileWay == "" {
 		return
 	}
 	file := fmt.Sprintf(reqsFileLayout, time.Now().Format("20060102_150405"))
@@ -97,11 +97,12 @@ func cleanCallFile() {
 		}
 		if now-info.ModTime().Unix() > msggFilewayExpire {
 			log.Info("callfile-remove", "file", fpath)
+			os.RemoveAll(fpath)
 		} else {
 			count++
 		}
 		return nil
 	})
 	filewayFilesCount.Set(count)
-	log.Info("callfile-count", "file", count)
+	log.Info("callfile-removes", "file", count)
 }

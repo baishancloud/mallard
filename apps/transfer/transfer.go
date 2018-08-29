@@ -59,7 +59,7 @@ func main() {
 	go configapi.Intervals(time.Second * time.Duration(cfg.Center.Interval))
 
 	// set token
-	go httptoken.SyncVerifier(cfg.TokenFile, time.Second*30)
+	go httptoken.SyncVerifier(cfg.TokenFile, time.Minute)
 
 	// prepare queues
 	mQueue := queues.NewQueue(1e6, cfg.Store.DumpDir)
