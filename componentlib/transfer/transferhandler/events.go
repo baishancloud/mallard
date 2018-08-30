@@ -23,7 +23,7 @@ func init() {
 
 func eventsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	eventReqQPS.Incr(1)
-	pack, err := httputil.LoadPack(r, 1024*3)
+	pack, err := httputil.LoadPack(r, 1024)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
 		return
@@ -43,7 +43,7 @@ func eventsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
 	log.Debug("e-recv-ok",
 		"len", dataLen,
-		"gzip", r.Header.Get("Content-Length"),
+		"bytes", len(pack.Data),
 		"remote", r.RemoteAddr)
 	eventRecvQPS.Incr(dataLen)
 }

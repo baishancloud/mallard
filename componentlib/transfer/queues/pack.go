@@ -50,6 +50,19 @@ func (ps Packets) ToMetrics() ([]*models.Metric, error) {
 	return metrics, nil
 }
 
+// ToMetricsList converts packets to metrics list, same length slice with packets count
+func (ps Packets) ToMetricsList() ([][]*models.Metric, error) {
+	metrics := make([][]*models.Metric, 0, len(ps))
+	for _, p := range ps {
+		ms := make([]*models.Metric, 0, 10)
+		if err := p.Decode(&ms); err != nil {
+			return nil, err
+		}
+		metrics = append(metrics, ms)
+	}
+	return metrics, nil
+}
+
 // ToEvents converts packets to events
 func (ps Packets) ToEvents() ([]*models.Event, error) {
 	events := make([]*models.Event, 0, len(ps)*5)

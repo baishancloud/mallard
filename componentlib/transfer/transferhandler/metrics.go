@@ -36,7 +36,7 @@ var (
 
 func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	metricsReqQPS.Incr(1)
-	pack, err := httputil.LoadPack(r, 1024*10)
+	pack, err := httputil.LoadPack(r, 1024*3)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
 		return
@@ -115,12 +115,13 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		log.Debug("m-pop-0", "r", r.RemoteAddr)
 		return
 	}
-	metrics, err := packets.ToMetrics()
+	metrics, err := packets.ToMetricsList()
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
 		return
 	}
 	rw.Header().Set("Data-Length", strconv.Itoa(len(metrics)))
+	// old need slice slices
 	bytesLen, err := httputil.ResponseJSON(rw, metrics, true, false)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
