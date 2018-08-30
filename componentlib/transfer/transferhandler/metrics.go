@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/baishancloud/mallard-gtm/common/expvars"
 	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
@@ -24,10 +23,10 @@ var (
 	metricsRopZeroQPS  = expvar.NewQPS("http.metric_pop_zero")
 	metricsPopDataQPS  = expvar.NewQPS("http.metric_pop_data")
 
-	metricsPushQPS          = expvars.NewQPS("store.push")
-	metricsPopFailDiff      = expvars.NewDiff("store.pop_fail")
-	metricsDropDiff         = expvars.NewDiff("store.drop")
-	metricsQueueLengthCount = expvars.NewBase("store.queue_length")
+	metricsPushQPS          = expvar.NewQPS("store.push")
+	metricsPopFailDiff      = expvar.NewDiff("store.pop_fail")
+	metricsDropDiff         = expvar.NewDiff("store.drop")
+	metricsQueueLengthCount = expvar.NewBase("store.queue_length")
 )
 
 func init() {
