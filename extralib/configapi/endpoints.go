@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/baishancloud/mallard/componentlib/center/sqldata"
+	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"
 )
@@ -17,6 +18,10 @@ var (
 	hostsInfos   = make(map[string][]interface{})
 	hostsConfigs = make(map[string]*models.HostConfig)
 	hostsLock    sync.RWMutex
+
+	endpointsCount  = expvar.NewBase("csdk.endpoints")
+	hostInfosCount  = expvar.NewBase("csdk.hostinfos")
+	hostConfigsCunt = expvar.NewBase("csdk.hostconfigs")
 )
 
 const (
@@ -32,17 +37,20 @@ func init() {
 	registerFactory(TypeEndpoints, reqEndpoints)
 	registerFactory(TypeHostInfos, reqHostInfos)
 	registerFactory(TypeHostConfigs, reqHostConfigs)
+
+	expvar.Register(endpointsCount, hostInfosCount, hostConfigsCunt)
 }
 
 func reqEndpoints() {
 	url := centerAPI + "/api/endpoints?gzip=1&crc=" + strconv.FormatUint(uint64(cacheEndpoints.CRC), 10)
 	eps := new(sqldata.Endpoints)
-	statusCode, err := httputil.GetJSON(url, time.Second*5, eps)
+	status, err := httputil.GetJSON(url, time.Second*10, eps)
+	triggerExpvar(status, err)
 	if err != nil {
 		log.Warn("req-endpoints-error", "error", err)
 		return
 	}
-	if statusCode == 304 {
+	if status == 304 {
 		log.Info("req-endpoints-304")
 		return
 	}
@@ -50,6 +58,7 @@ func reqEndpoints() {
 		eps.BuildAll()
 		cacheEndpoints = eps
 		log.Info("req-endpoints-ok", "crc", cacheEndpoints.CRC)
+		endpointsCount.Set(int64(eps.Len()))
 		return
 	}
 	log.Info("req-endpoints-same", "crc", cacheEndpoints.CRC)
@@ -59,12 +68,14 @@ func reqHostConfigs() {
 	url := centerAPI + "/api/host/configs?gzip=1"
 	hosts := make(map[string]*models.HostConfig)
 	status, err := httputil.GetJSON(url, time.Second*10, &hosts)
+	triggerExpvar(status, err)
 	if err != nil {
 		log.Warn("req-hostconfigs-error", "error", err, "status", status)
 		return
 	}
 	hostsLock.Lock()
 	hostsConfigs = hosts
+	hostConfigsCunt.Set(int64(len(hosts)))
 	log.Info("req-hostconfigs", "hosts", len(hosts))
 	hostsLock.Unlock()
 }
@@ -78,12 +89,14 @@ func reqHostInfos() {
 	url := centerAPI + "/api/endpoints/info?gzip=1"
 	hosts := make(map[string][]interface{})
 	status, err := httputil.GetJSON(url, time.Second*10, &hosts)
+	triggerExpvar(status, err)
 	if err != nil {
 		log.Warn("req-hostinfos-error", "error", err, "status", status)
 		return
 	}
 	hostsLock.Lock()
 	hostsInfos = hosts
+	hostInfosCount.Set(int64(len(hosts)))
 	log.Info("req-hostsinfo", "hosts", len(hosts))
 	hostsLock.Unlock()
 }

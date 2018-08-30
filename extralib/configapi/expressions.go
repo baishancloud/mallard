@@ -30,6 +30,7 @@ func reqExpressions() {
 	url := centerAPI + "/api/expression?gzip=1&hash=" + expsHash
 	ss := make(map[int]*models.Expression, 1e3)
 	statusCode, hash, err := httputil.GetJSONWithHash(url, time.Second*10, &ss)
+	triggerExpvar(statusCode, err)
 	if err != nil {
 		log.Warn("req-exps-error", "error", err)
 		return

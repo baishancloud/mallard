@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
@@ -14,7 +15,27 @@ var (
 	log = zaplog.Zap("configapi")
 
 	centerAPI string
+
+	reqFailsDiff = expvar.NewDiff("csdk.req_fails")
+	req304Diff   = expvar.NewDiff("csdk.req_304")
+	reqOKDiff    = expvar.NewDiff("csdk.req_ok")
 )
+
+func init() {
+	expvar.Register(reqFailsDiff, req304Diff, reqOKDiff)
+}
+
+func triggerExpvar(status int, err error) {
+	if err != nil {
+		reqFailsDiff.Incr(1)
+		return
+	}
+	if status == 304 {
+		req304Diff.Incr(1)
+		return
+	}
+	reqOKDiff.Incr(1)
+}
 
 // IntervalOption is option for sync intervals
 type IntervalOption struct {

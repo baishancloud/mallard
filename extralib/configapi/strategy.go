@@ -60,6 +60,7 @@ func reqStrategies() {
 	url := centerAPI + "/api/strategy?gzip=1&hash=" + strategiesHash
 	ss := make(map[int]*models.Strategy, 1e3)
 	statusCode, hash, err := httputil.GetJSONWithHash(url, time.Second*10, &ss)
+	triggerExpvar(statusCode, err)
 	if err != nil {
 		log.Warn("req-strategies-error", "error", err)
 		return

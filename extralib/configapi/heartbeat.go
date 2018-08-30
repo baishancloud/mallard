@@ -49,15 +49,18 @@ func syncHeartbeat() {
 	resp, err := httputil.PostJSON(centerAPI+"/api/ping", time.Second*10, currents)
 	if err != nil {
 		log.Warn("heartbeat-error", "error", err, "heatbeats", len(currents))
+		reqFailsDiff.Incr(1)
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		log.Warn("heatbeat-bad-status", "status", resp.StatusCode)
+		reqFailsDiff.Incr(1)
 		return
 	}
 	heartbeatSyncOnceCount.Set(int64(len(currents)))
 	log.Info("heartbeat-ok", "len", len(currents))
+	reqOKDiff.Incr(1)
 }
 
 // SetHeartbeat sets heart beat info to sync to config-center
@@ -91,13 +94,16 @@ func GetHeartbeatData(diff int64, timeRange int64) (*HeartbeatResult, error) {
 	address := fmt.Sprintf(centerAPI+"/api/endpoint/live?duration=%d&range=%d", diff, timeRange)
 	resp, err := http.Get(address)
 	if err != nil {
+		reqFailsDiff.Incr(1)
 		return nil, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		reqFailsDiff.Incr(1)
 		return nil, err
 	}
+	reqOKDiff.Incr(1)
 	result := new(HeartbeatResult)
 	return result, json.Unmarshal(body, result)
 }
@@ -117,12 +123,15 @@ func syncHostService() {
 	resp, err := httputil.PostJSON(centerAPI+"/api/ping/hostservice", time.Second*10, currentHostService)
 	if err != nil {
 		log.Warn("sync-hostservice-error", "error", err, "hs", currentHostService)
+		reqFailsDiff.Incr(1)
 		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		log.Warn("sync-hostservice-bad-status", "status", resp.StatusCode)
+		reqFailsDiff.Incr(1)
 		return
 	}
 	log.Info("sync-hostservice-ok", "hs", currentHostService)
+	reqOKDiff.Incr(1)
 }

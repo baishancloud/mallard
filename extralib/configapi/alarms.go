@@ -38,6 +38,7 @@ func reqAlarms() {
 	url := centerAPI + "/api/alarm/all?gzip=1&crc=" + strconv.FormatUint(uint64(cacheAlarms.CRC), 10)
 	alarms := new(sqldata.Alarms)
 	status, err := httputil.GetJSON(url, time.Second*10, alarms)
+	triggerExpvar(status, err)
 	if err != nil {
 		log.Warn("req-alarms-error", "error", err)
 		return
@@ -81,6 +82,7 @@ func reqAlarmRequests() {
 	url := centerAPI + "/api/alarm/requests?gzip=1&crc=" + strconv.FormatUint(uint64(cacheAlarms.CRC), 10)
 	requests := make(map[int]map[string]*sqldata.AlarmSendRequest)
 	status, err := httputil.GetJSON(url, time.Second*10, &requests)
+	triggerExpvar(status, err)
 	if err != nil {
 		log.Warn("req-alarm-requests", "error", err)
 		return
