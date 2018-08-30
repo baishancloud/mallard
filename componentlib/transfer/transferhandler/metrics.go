@@ -19,19 +19,22 @@ var (
 	metricsRecvQPS     = expvar.NewQPS("http.metric_recv")
 	metricsOpenReqQPS  = expvar.NewQPS("http.metric_open_req")
 	metricsOpenRecvQPS = expvar.NewQPS("http.metric_open_recv")
-	metricsRopQPS      = expvar.NewQPS("http.metric_pop")
-	metricsRopZeroQPS  = expvar.NewQPS("http.metric_pop_zero")
-	metricsPopDataQPS  = expvar.NewQPS("http.metric_pop_data")
 
-	metricsPushQPS          = expvar.NewQPS("store.push")
-	metricsPopFailDiff      = expvar.NewDiff("store.pop_fail")
-	metricsDropDiff         = expvar.NewDiff("store.drop")
-	metricsQueueLengthCount = expvar.NewBase("store.queue_length")
+	metricsRopQPS     = expvar.NewQPS("http.metric_pop")
+	metricsRopZeroQPS = expvar.NewQPS("http.metric_pop_zero")
+	metricsPopDataQPS = expvar.NewQPS("http.metric_pop_data")
+
+	storePushQPS          = expvar.NewQPS("store.push")
+	storePopAvg           = expvar.NewAverage("store.pop_size", 50)
+	storePopFailDiff      = expvar.NewDiff("store.pop_fail")
+	storeDropDiff         = expvar.NewDiff("store.drop")
+	storeQueueLengthCount = expvar.NewBase("store.queue_length")
 )
 
 func init() {
-	expvar.Register(metricsReqQPS, metricsRecvQPS, metricsOpenReqQPS, metricsOpenRecvQPS, metricsPopDataQPS, metricsRopQPS,
-		metricsPushQPS, metricsPopFailDiff, metricsDropDiff, metricsQueueLengthCount)
+	expvar.Register(metricsReqQPS, metricsRecvQPS, metricsOpenReqQPS, metricsOpenRecvQPS,
+		metricsPopDataQPS, metricsRopQPS, metricsRopZeroQPS,
+		storePushQPS, storePopFailDiff, storeDropDiff, storeQueueLengthCount, storePopAvg)
 }
 
 var mQueue *queues.Queue
@@ -53,13 +56,13 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
 			log.Warn("m-recv-error", "err", err, "remote", r.RemoteAddr)
-			metricsDropDiff.Incr(int64(pack.Len))
+			storeDropDiff.Incr(int64(pack.Len))
 			return
 		}
 		if dump > 0 {
 			log.Info("push-metrics-dump", "count", dump)
 		}
-		metricsPushQPS.Incr(int64(pack.Len))
+		storePushQPS.Incr(int64(pack.Len))
 	}
 	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
 	rw.WriteHeader(204)
@@ -86,11 +89,12 @@ func metricsPop(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		httputil.Response404(rw, r)
 		return
 	}
+	// pop value
 	size := getPopSize(r)
 	packets, err := mQueue.Pop(size)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
-		metricsPopFailDiff.Incr(1)
+		storePopFailDiff.Incr(1)
 		return
 	}
 	if len(packets) == 0 {
@@ -99,16 +103,22 @@ func metricsPop(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		metricsRopZeroQPS.Incr(1)
 		return
 	}
+	storePopAvg.Set(int64(len(packets)))
+
+	// encode response
 	rw.Header().Set("Data-Type", "pack")
 	rw.Header().Set("Data-Length", strconv.Itoa(len(packets)))
 	bytesLen, err := httputil.ResponseJSON(rw, packets, false, false)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
-		metricsPopFailDiff.Incr(1)
+		storePopFailDiff.Incr(1)
 		return
 	}
 	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr)
-	metricsQueueLengthCount.Set(int64(mQueue.Len()))
+
+	// stats
+	storeQueueLengthCount.Set(int64(mQueue.Len()))
+	metricsPopDataQPS.Incr(int64(packets.DataLen()))
 }
 
 func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -117,11 +127,12 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		httputil.Response404(rw, r)
 		return
 	}
+	// pop value
 	size := getPopSize(r)
 	packets, err := mQueue.Pop(size)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
-		metricsPopFailDiff.Incr(1)
+		storePopFailDiff.Incr(1)
 		return
 	}
 	if len(packets) == 0 {
@@ -130,10 +141,13 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		metricsRopZeroQPS.Incr(1)
 		return
 	}
+	storePopAvg.Set(int64(len(packets)))
+
+	// encode to old slices
 	metrics, err := packets.ToMetricsList()
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
-		metricsPopFailDiff.Incr(1)
+		storePopFailDiff.Incr(1)
 		return
 	}
 	rw.Header().Set("Data-Length", strconv.Itoa(len(metrics)))
@@ -141,11 +155,14 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	bytesLen, err := httputil.ResponseJSON(rw, metrics, true, false)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
-		metricsPopFailDiff.Incr(1)
+		storePopFailDiff.Incr(1)
 		return
 	}
 	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr)
-	metricsQueueLengthCount.Set(int64(mQueue.Len()))
+
+	// stats
+	storeQueueLengthCount.Set(int64(mQueue.Len()))
+	metricsPopDataQPS.Incr(int64(packets.DataLen()))
 }
 
 func openPing(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -195,7 +212,7 @@ func openMetricRecv(rw http.ResponseWriter, r *http.Request, ps httprouter.Param
 		"store", r.Form.Get("store") != "",
 		"v1", r.Form.Get("v2") == "",
 		"user", users["user"])
-	metricsOpenRecvQPS.Incr(int64(len(pack.Data)))
+	metricsOpenRecvQPS.Incr(int64(len(pack.Data) / 275)) // 275 is common size of metric in usage
 }
 
 func getVerifyUsers(ps httprouter.Params) map[string]interface{} {

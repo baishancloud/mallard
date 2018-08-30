@@ -13,12 +13,15 @@ import (
 var (
 	evtQueue *queues.Queue
 
-	eventReqQPS  = expvar.NewQPS("http.event_req")
-	eventRecvQPS = expvar.NewQPS("http.event_recv")
+	eventReqQPS     = expvar.NewQPS("http.event_req")
+	eventRecvQPS    = expvar.NewQPS("http.event_recv")
+	eventorPushQPS  = expvar.NewQPS("eventor.push")
+	eventorDropDiff = expvar.NewDiff("eventor.drop")
 )
 
 func init() {
-	expvar.Register(eventReqQPS, eventRecvQPS)
+	expvar.Register(eventReqQPS, eventRecvQPS,
+		eventorPushQPS, eventorDropDiff)
 }
 
 func eventsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -33,11 +36,13 @@ func eventsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
 			log.Warn("e-recv-error", "err", err, "remote", r.RemoteAddr)
+			eventorDropDiff.Incr(int64(pack.Len))
 			return
 		}
 		if dump > 0 {
 			log.Info("push-events-dump", "count", dump)
 		}
+		eventorPushQPS.Incr(int64(pack.Len))
 	}
 	rw.WriteHeader(204)
 	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)

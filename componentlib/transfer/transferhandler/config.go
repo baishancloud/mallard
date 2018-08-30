@@ -61,5 +61,5 @@ func configGet(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	rw.Header().Set("Content-Hash", hash)
 	rw.Header().Set("Transfer-Sertypes", configapi.GetEndpointSertypes(endpoint))
 	httputil.ResponseJSON(rw, mData, isGzip, false)
-	log.Debug("config-get-ok", "ep", endpoint, "hash", hash, "gzip", isGzip)
+	log.Info("config-get-ok", "ep", endpoint, "hash", hash, "gzip", isGzip)
 }
