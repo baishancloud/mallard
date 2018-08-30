@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/baishancloud/mallard-gtm/common/expvars"
 	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
@@ -15,16 +16,23 @@ import (
 )
 
 var (
-	metricsReqQPS      = expvar.NewQPS("http.metrics_req")
-	metricsRecvQPS     = expvar.NewQPS("http.metrics_recv")
-	metricsOpenReqQPS  = expvar.NewQPS("http.metrics_open_req")
-	metricsOpenRecvQPS = expvar.NewQPS("http.metrics_open_recv")
-	metricsRopQPS      = expvar.NewQPS("http.metrics_pop")
-	metricsPopDataQPS  = expvar.NewQPS("http.metrics_pop_data")
+	metricsReqQPS      = expvar.NewQPS("http.metric_req")
+	metricsRecvQPS     = expvar.NewQPS("http.metric_recv")
+	metricsOpenReqQPS  = expvar.NewQPS("http.metric_open_req")
+	metricsOpenRecvQPS = expvar.NewQPS("http.metric_open_recv")
+	metricsRopQPS      = expvar.NewQPS("http.metric_pop")
+	metricsRopZeroQPS  = expvar.NewQPS("http.metric_pop_zero")
+	metricsPopDataQPS  = expvar.NewQPS("http.metric_pop_data")
+
+	metricsPushQPS          = expvars.NewQPS("store.push")
+	metricsPopFailDiff      = expvars.NewDiff("store.pop_fail")
+	metricsDropDiff         = expvars.NewDiff("store.drop")
+	metricsQueueLengthCount = expvars.NewBase("store.queue_length")
 )
 
 func init() {
-	expvar.Register(metricsReqQPS, metricsRecvQPS, metricsOpenReqQPS, metricsOpenRecvQPS, metricsPopDataQPS, metricsRopQPS)
+	expvar.Register(metricsReqQPS, metricsRecvQPS, metricsOpenReqQPS, metricsOpenRecvQPS, metricsPopDataQPS, metricsRopQPS,
+		metricsPushQPS, metricsPopFailDiff, metricsDropDiff, metricsQueueLengthCount)
 }
 
 var mQueue *queues.Queue
@@ -46,11 +54,13 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
 			log.Warn("m-recv-error", "err", err, "remote", r.RemoteAddr)
+			metricsDropDiff.Incr(int64(pack.Len))
 			return
 		}
 		if dump > 0 {
 			log.Info("push-metrics-dump", "count", dump)
 		}
+		metricsPushQPS.Incr(int64(pack.Len))
 	}
 	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
 	rw.WriteHeader(204)
@@ -81,11 +91,13 @@ func metricsPop(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	packets, err := mQueue.Pop(size)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
+		metricsPopFailDiff.Incr(1)
 		return
 	}
 	if len(packets) == 0 {
 		rw.WriteHeader(204)
 		log.Debug("m-pop-0", "r", r.RemoteAddr)
+		metricsRopZeroQPS.Incr(1)
 		return
 	}
 	rw.Header().Set("Data-Type", "pack")
@@ -93,9 +105,11 @@ func metricsPop(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	bytesLen, err := httputil.ResponseJSON(rw, packets, false, false)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
+		metricsPopFailDiff.Incr(1)
 		return
 	}
 	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr)
+	metricsQueueLengthCount.Set(int64(mQueue.Len()))
 }
 
 func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -108,16 +122,19 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	packets, err := mQueue.Pop(size)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
+		metricsPopFailDiff.Incr(1)
 		return
 	}
 	if len(packets) == 0 {
 		rw.WriteHeader(204)
 		log.Debug("m-pop-0", "r", r.RemoteAddr)
+		metricsRopZeroQPS.Incr(1)
 		return
 	}
 	metrics, err := packets.ToMetricsList()
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
+		metricsPopFailDiff.Incr(1)
 		return
 	}
 	rw.Header().Set("Data-Length", strconv.Itoa(len(metrics)))
@@ -125,9 +142,11 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	bytesLen, err := httputil.ResponseJSON(rw, metrics, true, false)
 	if err != nil {
 		httputil.ResponseFail(rw, r, err)
+		metricsPopFailDiff.Incr(1)
 		return
 	}
 	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr)
+	metricsQueueLengthCount.Set(int64(mQueue.Len()))
 }
 
 func openPing(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {

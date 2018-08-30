@@ -20,7 +20,7 @@ var transport = &http.Transport{
 	TLSClientConfig: &tls.Config{
 		InsecureSkipVerify: true,
 	},
-	MaxIdleConns:        300,
+	MaxIdleConns:        200,
 	MaxIdleConnsPerHost: 100,
 }
 
@@ -76,10 +76,12 @@ func popAndSend(q *queues.Queue, batch int) bool {
 		return false
 	}
 	if len(packets) == 0 {
+		eventQueueLengthCount.Set(0)
 		return false
 	}
 	wg.Add(1)
 	sendValues(packets)
+	eventQueueLengthCount.Set(int64(q.Len()))
 	return true
 }
 
