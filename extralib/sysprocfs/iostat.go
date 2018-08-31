@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	diskSectorSize = 512
+	diskSectorSize float64 = 512
 )
 
 // DiskIOStat is disk io stats
@@ -62,12 +62,12 @@ var (
 
 // IOStat is io stats for one disk in duration
 type IOStat struct {
-	ReadBytes        uint64 `json:"read_bytes"`
-	WriteBytes       uint64 `json:"write_bytes"`
-	ReadCount        uint64 `json:"read_count"`
-	MergedReadCount  uint64 `json:"merged_read_count"`
-	WriteCount       uint64 `json:"write_count"`
-	MergedWriteCount uint64 `json:"merged_write_count"`
+	ReadBytes        float64 `json:"read_bytes"`
+	WriteBytes       float64 `json:"write_bytes"`
+	ReadCount        uint64  `json:"read_count"`
+	MergedReadCount  uint64  `json:"merged_read_count"`
+	WriteCount       uint64  `json:"write_count"`
+	MergedWriteCount uint64  `json:"merged_write_count"`
 
 	AvgrqSz    float64 `json:"avgrq_sz"`
 	AvgquSz    float64 `json:"avgqu_sz"`
@@ -77,12 +77,12 @@ type IOStat struct {
 	Svctm      float64 `json:"svctm"`
 	Util       float64 `json:"util"`
 	Device     string  `json:"device"`
-	Rio        uint64  `json:"rio"`
-	Wio        uint64  `json:"wio"`
+	Rio        float64 `json:"rio"`
+	Wio        float64 `json:"wio"`
 	TotalIo    uint64  `json:"total_io"`
-	DeltaResc  uint64  `json:"delta_resc"`
-	DeltaWsec  uint64  `json:"delta_wsec"`
-	DeltaTotal uint64  `json:"delta_total"`
+	DeltaResc  float64 `json:"delta_resc"`
+	DeltaWsec  float64 `json:"delta_wsec"`
+	DeltaTotal float64 `json:"delta_total"`
 }
 
 // String prints memory friendly
@@ -112,14 +112,38 @@ func IOStats() (map[string]*IOStat, error) {
 			continue
 		}
 		l := lastDiskMap[k]
-		rio := ds.ReadCount - l.ReadCount
-		wio := ds.WriteCount - l.WriteCount
-		deltaRsec := (ds.ReadBytes - l.ReadBytes) / diskSectorSize
-		deltaWsec := (ds.WriteBytes - l.WriteBytes) / diskSectorSize
-		ruse := ds.ReadTime - l.ReadTime
-		wuse := ds.WriteTime - l.WriteTime
-		use := ds.IoTime - l.IoTime
+		rio := float64(ds.ReadCount) - float64(l.ReadCount)
+		if rio < 0 {
+			rio = 0
+		}
+		wio := float64(ds.WriteCount) - float64(l.WriteCount)
+		if wio < 0 {
+			wio = 0
+		}
+		deltaRsec := (float64(ds.ReadBytes) - float64(l.ReadBytes)) / diskSectorSize
+		if deltaRsec < 0 {
+			deltaRsec = 0
+		}
+		deltaWsec := (float64(ds.WriteBytes) - float64(l.WriteBytes)) / diskSectorSize
+		if deltaWsec < 0 {
+			deltaWsec = 0
+		}
+		ruse := float64(ds.ReadTime) - float64(l.ReadTime)
+		if ruse < 0 {
+			ruse = 0
+		}
+		wuse := float64(ds.WriteTime) - float64(l.WriteTime)
+		if wuse < 0 {
+			wuse = 0
+		}
+		use := float64(ds.IoTime) - float64(l.IoTime)
+		if use < 0 {
+			use = 0
+		}
 		nio := rio + wio
+		if nio < 0 {
+			nio = 0
+		}
 		var (
 			avgrqSz = 0.0
 			await   = 0.0
@@ -127,12 +151,16 @@ func IOStats() (map[string]*IOStat, error) {
 			wAwait  = 0.0
 			svctm   = 0.0
 		)
-		if nio != 0 {
+		if nio > 0 {
 			avgrqSz = float64(deltaRsec+deltaWsec) / float64(nio)
 			await = float64(ruse+wuse) / float64(nio)
-			rAwait = float64(ruse) / float64(rio)
-			wAwait = float64(wuse) / float64(wio)
 			svctm = float64(use) / float64(nio)
+		}
+		if wio > 0 {
+			wAwait = float64(wuse) / float64(wio)
+		}
+		if rio > 0 {
+			rAwait = float64(ruse) / float64(rio)
 		}
 		avgquSz := float64(ds.WeightedIO-l.WeightedIO) / 1000
 

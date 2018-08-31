@@ -17,10 +17,13 @@ func TestIOstat(t *testing.T) {
 	Convey("io_stat", t, func() {
 		ioStat, err := IOStats()
 		So(err, ShouldBeNil)
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 5)
 		ioStat, err = IOStats()
 		So(err, ShouldBeNil)
-		fmt.Println(ioStat)
+		So(len(ioStat), ShouldBeGreaterThanOrEqualTo, 1)
+		for _, ios := range ioStat {
+			So(ios, ShouldNotBeNil)
+		}
 	})
 
 }

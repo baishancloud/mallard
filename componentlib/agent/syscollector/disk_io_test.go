@@ -25,14 +25,14 @@ func TestDiskIO(t *testing.T) {
 
 	Convey("iostat", t, func() {
 		IOStatsMetrics()
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 3)
 
 		metrics, err := IOStatsMetrics()
 		So(err, ShouldBeNil)
 		So(len(metrics), ShouldBeGreaterThan, 1)
 
 		So(metrics[0].Name, ShouldEqual, diskIOStatMetricName)
-		So(metrics[0].Fields, ShouldHaveLength, 11)
+		So(metrics[0].Fields, ShouldHaveLength, 13)
 		So(metrics[0].Tags, ShouldContainKey, "device")
 		So(metrics[0].Fields, ShouldContainKey, "util")
 
