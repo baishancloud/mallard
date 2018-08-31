@@ -10,7 +10,7 @@ require (
 	github.com/golang/protobuf v1.2.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
-	github.com/influxdata/influxdb v0.0.0-20180816195907-c314fc494e21
+	github.com/influxdata/influxdb v1.6.2
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/julienschmidt/httprouter v0.0.0-20180715161854-348b672cd90d
@@ -30,10 +30,11 @@ require (
 	go.uber.org/zap v0.0.0-20180814183419-67bc79d13d15
 	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
-	golang.org/x/sys v0.0.0-20180824143301-4910a1d54f87 // indirect
+	golang.org/x/sys v0.0.0-20180830151530-49385e6e1522 // indirect
 	golang.org/x/text v0.3.0 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	google.golang.org/appengine v1.1.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.2.1 // indirect

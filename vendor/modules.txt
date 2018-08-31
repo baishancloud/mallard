@@ -16,7 +16,7 @@ github.com/go-redis/redis/internal/util
 github.com/go-sql-driver/mysql
 # github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c
 github.com/gopherjs/gopherjs/js
-# github.com/influxdata/influxdb v0.0.0-20180816195907-c314fc494e21
+# github.com/influxdata/influxdb v1.6.2
 github.com/influxdata/influxdb/models
 github.com/influxdata/influxdb/client/v2
 github.com/influxdata/influxdb/pkg/escape
@@ -59,7 +59,7 @@ go.uber.org/zap/internal/color
 go.uber.org/zap/internal/exit
 # golang.org/x/net v0.0.0-20180826012351-8a410e7b638d
 golang.org/x/net/context
-# golang.org/x/sys v0.0.0-20180824143301-4910a1d54f87
+# golang.org/x/sys v0.0.0-20180830151530-49385e6e1522
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
