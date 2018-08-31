@@ -72,6 +72,8 @@ type IOStat struct {
 	AvgrqSz    float64 `json:"avgrq_sz"`
 	AvgquSz    float64 `json:"avgqu_sz"`
 	Await      float64 `json:"await"`
+	RAwait     float64 `json:"r_await"`
+	WAwait     float64 `json:"w_await"`
 	Svctm      float64 `json:"svctm"`
 	Util       float64 `json:"util"`
 	Device     string  `json:"device"`
@@ -118,12 +120,18 @@ func IOStats() (map[string]*IOStat, error) {
 		wuse := ds.WriteTime - l.WriteTime
 		use := ds.IoTime - l.IoTime
 		nio := rio + wio
-		avgrqSz := 0.0
-		await := 0.0
-		svctm := 0.0
+		var (
+			avgrqSz = 0.0
+			await   = 0.0
+			rAwait  = 0.0
+			wAwait  = 0.0
+			svctm   = 0.0
+		)
 		if nio != 0 {
 			avgrqSz = float64(deltaRsec+deltaWsec) / float64(nio)
 			await = float64(ruse+wuse) / float64(nio)
+			rAwait = float64(ruse) / float64(rio)
+			wAwait = float64(wuse) / float64(wio)
 			svctm = float64(use) / float64(nio)
 		}
 		avgquSz := float64(ds.WeightedIO-l.WeightedIO) / 1000
@@ -144,6 +152,8 @@ func IOStats() (map[string]*IOStat, error) {
 			AvgrqSz:          avgrqSz,
 			AvgquSz:          avgquSz,
 			Await:            await,
+			RAwait:           rAwait,
+			WAwait:           wAwait,
 			Svctm:            svctm,
 			Util:             util,
 			Device:           ds.Name,

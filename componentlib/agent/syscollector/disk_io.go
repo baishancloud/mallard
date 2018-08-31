@@ -80,6 +80,8 @@ func IOStatsMetrics() ([]*models.Metric, error) {
 				"avgrq_sz":           utils.FixFloat(io.AvgrqSz),
 				"avgqu_sz":           utils.FixFloat(io.AvgquSz),
 				"await":              utils.FixFloat(io.Await),
+				"r_await":            utils.FixFloat(io.RAwait),
+				"w_await":            utils.FixFloat(io.WAwait),
 				"svctm":              utils.FixFloat(io.Svctm),
 				"util":               utils.FixFloat(io.Util),
 			},

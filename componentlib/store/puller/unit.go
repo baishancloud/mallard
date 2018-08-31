@@ -116,22 +116,24 @@ func (u *Unit) parsePullResponse(resp *http.Response) error {
 
 func (u *Unit) parseResponseMetrics(resp *http.Response) error {
 	dataLen, _ := strconv.Atoi(resp.Header.Get("Data-Length"))
-	metrics := make([]*models.Metric, 0, dataLen)
-	if err := utils.UngzipJSON(resp.Body, &metrics); err != nil {
+	metricsList := make([][]*models.Metric, 0, dataLen)
+	if err := utils.UngzipJSON(resp.Body, &metricsList); err != nil {
 		log.Warn("req-metrics-error", "key", u.key, "error", err, "data-len", dataLen)
 		return err
 	}
-	log.Debug("pull-ok", "key", u.key, "len", len(metrics), "data-len", dataLen)
-	if metricsQueue != nil && len(metrics) > 0 {
-		u.metricCounter.Incr(int64(len(metrics)))
-		queuePushCount.Incr(int64(len(metrics)))
-		values := make([]interface{}, len(metrics))
-		for i := range metrics {
-			values[i] = metrics[i]
-		}
-		if !metricsQueue.PushBatch(values) {
-			queuePushFailCount.Incr(int64(len(metrics)))
-			log.Warn("push-queue-fail", "datalen", len(values))
+	log.Debug("pull-ok", "key", u.key, "len", len(metricsList), "data-len", dataLen)
+	if metricsQueue != nil && len(metricsList) > 0 {
+		for _, metrics := range metricsList {
+			u.metricCounter.Incr(int64(len(metrics)))
+			queuePushCount.Incr(int64(len(metrics)))
+			values := make([]interface{}, len(metrics))
+			for i := range metrics {
+				values[i] = metrics[i]
+			}
+			if !metricsQueue.PushBatch(values) {
+				queuePushFailCount.Incr(int64(len(metrics)))
+				log.Warn("push-queue-fail", "datalen", len(values))
+			}
 		}
 	}
 	return nil

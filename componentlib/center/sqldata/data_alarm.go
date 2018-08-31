@@ -242,7 +242,8 @@ type (
 	}
 )
 
-func (asr AlarmSendRequest) Unique() string {
+// UsersKey is string of all users to send, not be unique
+func (asr AlarmSendRequest) UsersKey() string {
 	s := asr.Emails
 	s = append(s, asr.Wechats...)
 	s = append(s, asr.SMSs...)

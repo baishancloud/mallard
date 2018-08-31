@@ -82,7 +82,7 @@ func CallFileWay(reqs []*msggRequest) {
 }
 
 func cleanCallFile() {
-	var count int64
+	var counts, deletes int64
 	dir := filepath.Dir(reqsFileLayout)
 	now := time.Now().Unix()
 	filepath.Walk(dir, func(fpath string, info os.FileInfo, err error) error {
@@ -98,11 +98,12 @@ func cleanCallFile() {
 		if now-info.ModTime().Unix() > msggFilewayExpire {
 			log.Info("callfile-remove", "file", fpath)
 			os.RemoveAll(fpath)
+			deletes++
 		} else {
-			count++
+			counts++
 		}
 		return nil
 	})
-	filewayFilesCount.Set(count)
-	log.Info("callfile-removes", "file", count)
+	filewayFilesCount.Set(counts)
+	log.Info("callfile-removes", "file", counts, "deletes", deletes)
 }

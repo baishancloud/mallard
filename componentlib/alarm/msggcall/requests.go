@@ -108,9 +108,9 @@ func handleRequests(requests map[string]*msggRequest, mergeSize int) {
 		}
 		key := eid[:idx]
 		if req.Recover {
-			key += "-recover"
+			key += "_recover"
 		}
-		key += req.SendRequest.Unique()
+		key += "_" + req.SendRequest.UsersKey()
 		mergedRequests[key] = append(mergedRequests[key], req)
 	}
 	totalReqs := make([]*msggRequest, 0, len(requests))
