@@ -85,7 +85,7 @@ func (bc *BaseMeter) Name() string {
 type DiffMeter struct {
 	BaseMeter
 	lastValue    int64
-	isFirstValue int
+	isFirstValue int64
 }
 
 // NewDiff creates difference counter with name
@@ -102,16 +102,16 @@ func NewDiff(name string) *DiffMeter {
 
 // Set sets diff value
 func (dc *DiffMeter) Set(v int64) {
-	if dc.isFirstValue <= 2 {
-		dc.isFirstValue++
+	if atomic.LoadInt64(&dc.isFirstValue) <= 2 {
+		atomic.AddInt64(&dc.isFirstValue, 1)
 	}
 	dc.BaseMeter.Set(v)
 }
 
 // Incr increases diff value
 func (dc *DiffMeter) Incr(v int64) {
-	if dc.isFirstValue <= 2 {
-		dc.isFirstValue++
+	if atomic.LoadInt64(&dc.isFirstValue) <= 2 {
+		atomic.AddInt64(&dc.isFirstValue, 1)
 	}
 	dc.BaseMeter.Incr(v)
 }
@@ -121,7 +121,7 @@ func (dc *DiffMeter) Diff() int64 {
 	value := dc.Count()
 	diff := value - dc.lastValue
 	dc.lastValue = value
-	if dc.isFirstValue <= 1 {
+	if atomic.LoadInt64(&dc.isFirstValue) <= 1 {
 		return 0
 	}
 	return diff

@@ -3,12 +3,6 @@ language: go
 git:
   depth: 1
 
-go:
-  - "1.9.x"
-  - "1.10.x"
-  - "1.11.x"
-  - tip
-
 env:
   - GO111MODULE=on
 
@@ -19,7 +13,9 @@ matrix:
   - go: "1.10.x"
     script: go test ./... -coverprofile=coverage.txt
   - go: "1.11.x"
-    script: go test -mod=vendor ./... -coverprofile=coverage.txt
+    script: go test -race -mod=vendor ./... -coverprofile=coverage.txt
+  - go: "tip"
+    script: go test -race -mod=vendor ./... -coverprofile=coverage.txt
 
 install: true
 

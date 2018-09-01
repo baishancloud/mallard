@@ -32,6 +32,7 @@ func init() {
 
 // SetDir sets directory to run plugins
 func SetDir(dir string, logDir string, runningDir []string) {
+	pluginsLock.Lock()
 	if len(runningDir) == 0 {
 		runningDir = []string{"sys"}
 	}
@@ -40,6 +41,8 @@ func SetDir(dir string, logDir string, runningDir []string) {
 	os.MkdirAll(pluginLogDir, 0755)
 	pluginRunDirList = runningDir
 	log.Info("set-dir", "dir", dir, "log_dir", logDir, "running", runningDir)
+	pluginsLock.Unlock()
+
 	go ScanFiles()
 }
 
