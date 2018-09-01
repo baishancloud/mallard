@@ -62,7 +62,7 @@ func NetIfaceMetrics() ([]*models.Metric, error) {
 			for k, v := range netIf.Packages {
 				m2.Fields[k] = v
 			}
-			ret = append(ret, m2)
+			//ret = append(ret, m2)
 		}
 	}
 	return ret, nil
