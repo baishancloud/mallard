@@ -4,14 +4,24 @@ git:
   depth: 1
 
 go:
+  - "1.9.x"
   - "1.10.x"
+  - "1.11.x"
   - tip
 
-before_install:
-  - go get -t -v ./...
+env:
+  - GO111MODULE=on
 
-script:
-  - go test ./... -coverprofile=coverage.txt
+matrix:
+  include:
+  - go: "1.9.x"
+    script: ./go_1.9_test.sh
+  - go: "1.10.x"
+    script: go test ./... -coverprofile=coverage.txt
+  - go: "1.11.x"
+    script: go test -mod=vendor ./... -coverprofile=coverage.txt
+
+install: true
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

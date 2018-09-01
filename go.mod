@@ -14,6 +14,8 @@ require (
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/julienschmidt/httprouter v0.0.0-20180715161854-348b672cd90d
+	github.com/kr/pretty v0.1.0 // indirect
+	github.com/kr/pty v1.1.2 // indirect
 	github.com/lib/pq v1.0.0 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
 	github.com/onsi/ginkgo v1.6.0 // indirect
@@ -30,7 +32,7 @@ require (
 	go.uber.org/zap v0.0.0-20180814183419-67bc79d13d15
 	golang.org/x/net v0.0.0-20180826012351-8a410e7b638d // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
-	golang.org/x/sys v0.0.0-20180830151530-49385e6e1522 // indirect
+	golang.org/x/sys v0.0.0-20180831094639-fa5fdf94c789 // indirect
 	golang.org/x/text v0.3.0 // indirect
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	google.golang.org/appengine v1.1.0 // indirect
