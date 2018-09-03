@@ -1,6 +1,9 @@
 package configapi
 
 import (
+	"errors"
+	"html/template"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +16,7 @@ var (
 	expsLock    sync.RWMutex
 	expsHash    string
 	expsMap     = make(map[int]*models.Expression)
+	expsTpls    = make(map[int]*StrategyTplCache)
 	expsCounter = expvar.NewBase("csdk.expressions")
 )
 
@@ -42,6 +46,28 @@ func reqExpressions() {
 	expsLock.Lock()
 	expsMap = ss
 	expsHash = hash
+
+	// reload templates cache
+	tpls := make(map[int]*StrategyTplCache, len(ss))
+	for id, st := range ss {
+		tpl := &StrategyTplCache{
+			Note: st.Note,
+		}
+		if !strings.Contains(st.Note, "{{") {
+			tpl.NoneedRender = true
+			tpls[id] = tpl
+			continue
+		}
+		noteTmpl, err := template.New("note").Funcs(strategyTplFuncs).Parse(st.Note)
+		if err != nil {
+			log.Warn("expression-tpl-error", "error", err, "id", id, "note", st.Note)
+		} else {
+			tpl.Tpl = noteTmpl
+		}
+		tpls[id] = tpl
+	}
+	expsTpls = tpls
+
 	log.Info("req-exps-ok", "hash", hash, "len", len(expsMap))
 	expsCounter.Set(int64(len(expsMap)))
 	expsLock.Unlock()
@@ -71,4 +97,20 @@ func CheckExpressionsCache(hash string) (map[int]*models.Expression, string) {
 		return nil, hash
 	}
 	return GetExpressions(), expsHash
+}
+
+var (
+	// ErrExpressionTemplateNil means template cache is nil
+	ErrExpressionTemplateNil = errors.New("exp-tpl-nil")
+)
+
+// RenderExpressionTpl renders event with proper expression id
+func RenderExpressionTpl(id int, event *models.EventFull) (string, error) {
+	expsLock.RLock()
+	defer expsLock.RUnlock()
+	tplCache := expsTpls[id]
+	if tplCache == nil {
+		return "", ErrExpressionTemplateNil
+	}
+	return tplCache.Render(event)
 }
