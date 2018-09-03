@@ -17,6 +17,8 @@ var (
 	eventRecvQPS    = expvar.NewQPS("http.event_recv")
 	eventorPushQPS  = expvar.NewQPS("eventor.push")
 	eventorDropDiff = expvar.NewDiff("eventor.drop")
+
+	eventsFixLength int64 = 150
 )
 
 func init() {
@@ -46,6 +48,12 @@ func eventsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	rw.WriteHeader(204)
 	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
+	if dataLen < 1 {
+		dataLen = int64(len(pack.Data)) / eventsFixLength
+		if dataLen < 1 {
+			dataLen = 1
+		}
+	}
 	log.Debug("e-recv-ok",
 		"len", dataLen,
 		"bytes", len(pack.Data),

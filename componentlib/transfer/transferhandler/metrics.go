@@ -42,6 +42,8 @@ var mQueue *queues.Queue
 var (
 	// ErrMetricsPushFail means failure when pushing metrics to queue
 	ErrMetricsPushFail = errors.New("metrics-push-fail")
+
+	metricsFixLength int64 = 275
 )
 
 func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -64,8 +66,16 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		}
 		storePushQPS.Incr(int64(pack.Len))
 	}
-	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
 	rw.WriteHeader(204)
+
+	// stats
+	dataLen, _ := strconv.ParseInt(r.Header.Get("Data-Length"), 10, 64)
+	if dataLen < 1 {
+		dataLen = int64(len(pack.Data)) / metricsFixLength
+		if dataLen < 1 {
+			dataLen = 1
+		}
+	}
 	log.Debug("m-recv-ok",
 		"len", dataLen,
 		"bytes", len(pack.Data),
@@ -212,7 +222,7 @@ func openMetricRecv(rw http.ResponseWriter, r *http.Request, ps httprouter.Param
 		"store", r.Form.Get("store") != "",
 		"v1", r.Form.Get("v2") == "",
 		"user", users["user"])
-	metricsOpenRecvQPS.Incr(int64(len(pack.Data) / 275)) // 275 is common size of metric in usage
+	metricsOpenRecvQPS.Incr(int64(len(pack.Data)) / metricsFixLength) // 275 is common size of metric in usage
 }
 
 func getVerifyUsers(ps httprouter.Params) map[string]interface{} {

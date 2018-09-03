@@ -48,8 +48,10 @@ func configGet(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	if hash != "" && hash == epData.Hash() {
+		sertypes := configapi.GetEndpointSertypes(endpoint)
+		rw.Header().Set("Transfer-Sertypes", sertypes)
 		rw.WriteHeader(304)
-		log.Debug("config-get-304", "ep", endpoint, "hash", hash)
+		log.Debug("config-get-304", "ep", endpoint, "hash", hash, "sertypes", sertypes)
 		return
 	}
 	hash = epData.Hash()
@@ -59,7 +61,9 @@ func configGet(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 	isGzip := (r.FormValue("gzip") != "")
 	rw.Header().Set("Content-Hash", hash)
-	rw.Header().Set("Transfer-Sertypes", configapi.GetEndpointSertypes(endpoint))
+	sertypes := configapi.GetEndpointSertypes(endpoint)
+	rw.Header().Set("Transfer-Sertypes", sertypes)
 	httputil.ResponseJSON(rw, mData, isGzip, false)
-	log.Info("config-get-ok", "ep", endpoint, "hash", hash, "gzip", isGzip)
+
+	log.Info("config-get-ok", "ep", endpoint, "hash", hash, "gzip", isGzip, "sertypes", sertypes)
 }

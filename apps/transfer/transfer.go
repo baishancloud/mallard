@@ -73,7 +73,7 @@ func main() {
 
 	// init event-sender
 	eventsender.SetURLs(cfg.Eventor.Addrs)
-	go eventsender.ProcessQueue(evtQueue, 200)
+	go eventsender.ProcessQueue(evtQueue, 200, time.Second*time.Duration(cfg.Eventor.Timeout))
 
 	// init http server
 	log.Info("set-http", "is_public", cfg.IsPublic, "is_authorized", cfg.IsAuthorized)

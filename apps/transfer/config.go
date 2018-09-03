@@ -8,6 +8,7 @@ type (
 	eventorConfig struct {
 		Addrs   map[string]string `json:"addrs"`
 		DumpDir string            `json:"dump_dir"`
+		Timeout int               `json:"timeout"`
 	}
 	metricConfig struct {
 		DumpDir string `json:"dump_dir"`
@@ -37,6 +38,7 @@ func defaultConfig() config {
 		Eventor: eventorConfig{
 			Addrs:   make(map[string]string),
 			DumpDir: "_dump/event",
+			Timeout: 20,
 		},
 		Store: metricConfig{
 			DumpDir: "_dump/metric",

@@ -56,8 +56,16 @@ func SetURLs(rawURLs map[string]string) {
 	urlsLock.Unlock()
 }
 
+var (
+	sendTimeout = time.Second * 20
+)
+
 // ProcessQueue handle queues to sender
-func ProcessQueue(queue *queues.Queue, batch int) {
+func ProcessQueue(queue *queues.Queue, batch int, timeout time.Duration) {
+	if timeout >= time.Second {
+		sendTimeout = timeout
+	}
+	log.Info("set-timeout", "timeout", int(sendTimeout.Seconds()))
 	for {
 		if atomic.LoadInt64(&stopFlag) > 0 {
 			log.Info("stop")
@@ -115,7 +123,7 @@ func sendOnce(urlKey, url string, data []byte, dataLen int, retry int) {
 	request.Header.Add("Content-Type", "application/m-pack")
 	request.Header.Add("Data-Length", strconv.Itoa(dataLen))
 	client := &http.Client{
-		Timeout:   time.Second * 10,
+		Timeout:   sendTimeout,
 		Transport: transport,
 	}
 	resp, err := client.Do(request)
