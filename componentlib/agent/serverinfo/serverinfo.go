@@ -41,11 +41,11 @@ var (
 // Scan starts scanning serverinfo
 func Scan(defaultEp string, useAllConf bool) {
 	Read(defaultEp, useAllConf)
-	log.Info("read", "info", svrData, "use_allconf", useAllConf)
+	log.Info("read", "info", svrData, "use_allconf", useAllConf, "default-ep", defaultEp)
 
 	go utils.TickerThen(time.Minute, func() {
 		Read(defaultEp, useAllConf)
-		log.Info("read", "info", svrData, "use_allconf", useAllConf)
+		log.Info("read", "info", svrData, "use_allconf", useAllConf, "default-ep", defaultEp)
 	})
 }
 
@@ -56,6 +56,7 @@ func Read(defaultEp string, useAllConf bool) (*Data, error) {
 		HostnameOS:    utils.HostName(),
 		HostnameFirst: defaultEp,
 		useAllConf:    useAllConf,
+		SertypesConf:  svrData.SertypesConf,
 	}
 	dat, err := ioutil.ReadFile(cachegroupFile)
 	if err == nil {

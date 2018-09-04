@@ -24,6 +24,10 @@ func TestServerInfo(t *testing.T) {
 		svrData.Sertypes = ""
 		SetSertypes("test-sertypes")
 		So(Sertypes(), ShouldEqual, "test-sertypes")
+
+		Read("default-ep2", true)
+		So(svrData.SertypesConf, ShouldEqual, "test-sertypes")
+		So(Sertypes(), ShouldEqual, "abcdfeghi")
 	})
 	Convey("sertypes", t, func() {
 		Read("", false)

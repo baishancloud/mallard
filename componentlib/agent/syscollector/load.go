@@ -26,7 +26,10 @@ func LoadMetrics() ([]*models.Metric, error) {
 	misc, err := sysprocfs.LoadMisc()
 	if err != nil {
 		return nil, err
-
+	}
+	procsCount, err := sysprocfs.ProcsCount()
+	if err != nil {
+		return nil, err
 	}
 	core := float64(runtime.NumCPU())
 	serious := utils.FixFloat(avgM.Load1 / core)
@@ -49,6 +52,7 @@ func LoadMetrics() ([]*models.Metric, error) {
 			"procs_blocked": misc.ProcsBlocked,
 			"ctxt":          misc.Ctxt,
 			"ctxt_diff":     misc.CtxtDiff,
+			"procs_total":   procsCount,
 		},
 	}
 	return []*models.Metric{m, m3}, nil

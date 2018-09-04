@@ -29,15 +29,15 @@ var (
 
 func prepare() {
 	osutil.Flags(version, BuildTime, cfg)
-	runtime.GOMAXPROCS(cfg.Core)
-	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version)
-
 	if err := utils.ReadConfigFile(configFile, cfg); err != nil {
 		log.Fatal("config-error", "error", err)
 	}
 	if err := checkConfig(cfg); err != nil {
 		log.Fatal("config-error", "error", err)
 	}
+
+	runtime.GOMAXPROCS(cfg.Core)
+	log.Info("init", "core", runtime.GOMAXPROCS(0), "version", version, "endpoint", cfg.Endpoint)
 	log.SetDebug(cfg.Debug)
 }
 

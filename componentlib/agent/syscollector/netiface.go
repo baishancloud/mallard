@@ -22,7 +22,7 @@ func NetIfaceMetrics() ([]*models.Metric, error) {
 	}
 	ret := make([]*models.Metric, 0, len(ifacesMap))
 	for _, netIf := range ifacesMap {
-		m := &models.Metric{
+		/*m := &models.Metric{
 			Name:  netIfaceMetricName,
 			Value: float64(netIf.OutBytes),
 			Fields: map[string]interface{}{
@@ -48,11 +48,11 @@ func NetIfaceMetrics() ([]*models.Metric, error) {
 				"iface": netIf.Iface,
 			},
 		}
-		ret = append(ret, m)
+		ret = append(ret, m)*/
 
 		if len(netIf.Packages) > 0 {
 			m2 := &models.Metric{
-				Name:   netIfacePackagesMetricName,
+				Name:   netIfaceMetricName,
 				Value:  float64(netIf.Packages["tx_bytes"] + netIf.Packages["rx_bytes"]),
 				Fields: make(map[string]interface{}, len(netIf.Packages)),
 				Tags: map[string]string{
@@ -62,7 +62,10 @@ func NetIfaceMetrics() ([]*models.Metric, error) {
 			for k, v := range netIf.Packages {
 				m2.Fields[k] = v
 			}
-			//ret = append(ret, m2)
+			m2.Fields["total_bytes"] = m2.Value
+			m2.Fields["total_packets"] = float64(netIf.Packages["tx_packets"] + netIf.Packages["rx_packets"])
+			m2.Fields["total_errors"] = float64(netIf.Packages["tx_errors"] + netIf.Packages["rx_errors"])
+			ret = append(ret, m2)
 		}
 	}
 	return ret, nil
