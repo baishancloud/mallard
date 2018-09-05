@@ -15,6 +15,8 @@ const (
 func init() {
 	registerFactory("disk.io", DiskIOMetrics)
 	registerFactory("disk.iostat", IOStatsMetrics)
+
+	sysprocfs.IOStats()
 }
 
 // DiskIOMetrics returns disk io values metric values

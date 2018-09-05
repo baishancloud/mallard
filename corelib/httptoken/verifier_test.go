@@ -40,6 +40,6 @@ func TestVerifier(t *testing.T) {
 		So(err, ShouldEqual, ErrorTokenInvalid)
 
 		err = refreshVerifyFile("test_token.json")
-		So(err.Error(), ShouldEqual, "no-change")
+		So(err, ShouldBeNil)
 	})
 }

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/baishancloud/mallard/componentlib/agent/serverinfo"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/utils"
 )
@@ -97,7 +98,8 @@ func (c *Client) requestOnce(method string, url string, headers map[string]strin
 	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
-	req.Header.Add("User-Agent", "mallard2-agent")
+	req.Header.Set("Agent-Endpoint", serverinfo.Hostname())
+	req.Header.Set("User-Agent", "mallard2-agent")
 	if c.token != "" {
 		for k, v := range httptoken.BuildHeader(c.token) {
 			req.Header.Add(k, v)

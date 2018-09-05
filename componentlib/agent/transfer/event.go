@@ -55,6 +55,12 @@ func Events(events []*models.Event) {
 		if err != nil {
 			log.Debug("latency", "history", urlLatency.History())
 			log.Warn("events-send-once-error", "url", url, "error", err)
+
+			if atomic.LoadInt64(&stopFlag) > 0 {
+				log.Warn("events-stopped")
+				return
+			}
+
 			continue
 		}
 		resp.Body.Close()

@@ -11,6 +11,9 @@ import (
 
 func init() {
 	registerFactory("core.cpu", CPUAllMetrics)
+
+	sysprocfs.CPUCores()
+	sysprocfs.CPUTotal()
 }
 
 const (

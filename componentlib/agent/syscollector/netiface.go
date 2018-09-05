@@ -12,6 +12,9 @@ const (
 
 func init() {
 	registerFactory("net.iface", NetIfaceMetrics)
+
+	// init first value
+	sysprocfs.NetIfaceStats()
 }
 
 // NetIfaceMetrics returns net stats of one iface card

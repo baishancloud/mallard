@@ -64,6 +64,7 @@ func Collect(prefix string, interval time.Duration, metricsChan chan<- []*models
 	sort.Sort(sort.StringSlice(keys))
 	log.Info("factory", "keys", keys)
 
+	time.Sleep(time.Second * 3) // wait 3 seconds to prepare init values
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	var step int

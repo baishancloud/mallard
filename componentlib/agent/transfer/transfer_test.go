@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/baishancloud/mallard/componentlib/agent/serverinfo"
+	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"
 	"github.com/baishancloud/mallard/corelib/utils"
@@ -41,18 +42,32 @@ func setupTransferServer(c C) func() {
 		httputil.ResponseJSON(rw, mData, isGzip, false)
 	})
 	mux.HandleFunc("/api/event", func(rw http.ResponseWriter, r *http.Request) {
+		c.So(r.Header.Get("Hash-Key"), ShouldNotBeEmpty)
+		c.So(r.Header.Get("Hash-Code"), ShouldNotBeEmpty)
+		c.So(httptoken.CheckHeader(r.Header), ShouldBeTrue)
+
 		c.So(r.Header.Get("Data-Length"), ShouldEqual, "1500")
+		c.So(r.Header.Get("Agent-Endpoint"), ShouldNotBeBlank)
+		c.So(r.UserAgent(), ShouldEqual, "mallard2-agent")
+
 		rw.WriteHeader(204)
 	})
 	mux.HandleFunc("/api/metric", func(rw http.ResponseWriter, r *http.Request) {
 		c.So(r.Header.Get("Hash-Key"), ShouldNotBeEmpty)
 		c.So(r.Header.Get("Hash-Code"), ShouldNotBeEmpty)
+		c.So(httptoken.CheckHeader(r.Header), ShouldBeTrue)
+
 		c.So(r.Header.Get("Data-Length"), ShouldEqual, "1500")
+		c.So(r.Header.Get("Agent-Endpoint"), ShouldNotBeBlank)
+		c.So(r.UserAgent(), ShouldEqual, "mallard2-agent")
+
 		rw.WriteHeader(204)
 	})
 	mux.HandleFunc("/api/selfinfo", func(rw http.ResponseWriter, r *http.Request) {
 		c.So(r.Header.Get("Hash-Key"), ShouldNotBeEmpty)
 		c.So(r.Header.Get("Hash-Code"), ShouldNotBeEmpty)
+		c.So(httptoken.CheckHeader(r.Header), ShouldBeTrue)
+
 		postData := make(map[string]interface{})
 		err := utils.UngzipJSON(r.Body, &postData)
 		c.So(err, ShouldBeNil)
@@ -60,6 +75,7 @@ func setupTransferServer(c C) func() {
 		c.So(postData, ShouldContainKey, "endpoint")
 		c.So(postData, ShouldContainKey, "config")
 		c.So(postData, ShouldContainKey, "plugins")
+
 		rw.WriteHeader(204)
 	})
 	server = httptest.NewServer(mux)

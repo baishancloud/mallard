@@ -18,7 +18,7 @@ func TestLoad(t *testing.T) {
 		So(metrics[0].Fields, ShouldHaveLength, 5)
 
 		So(metrics[1].Name, ShouldEqual, loadMiscMetricName)
-		So(metrics[1].Fields, ShouldHaveLength, 4)
+		So(metrics[1].Fields, ShouldHaveLength, 5)
 
 		fmt.Println(metrics)
 	})

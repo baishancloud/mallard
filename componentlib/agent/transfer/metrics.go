@@ -56,6 +56,12 @@ func Metrics(metrics []*models.Metric) {
 			log.Debug("latency", "history", urlLatency.History())
 			log.Warn("metrics-send-once-error", "url", url, "error", err)
 			urlLatency.SetFail(idx)
+
+			if atomic.LoadInt64(&stopFlag) > 0 {
+				log.Warn("metrics-stopped")
+				return
+			}
+
 			continue
 		}
 		resp.Body.Close()

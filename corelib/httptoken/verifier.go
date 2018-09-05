@@ -80,7 +80,8 @@ func refreshVerifyFile(file string) error {
 	}
 	modTime := info.ModTime().Unix()
 	if modTime == tokeFileModTime {
-		return errors.New("no-change")
+		log.Debug("keep")
+		return nil
 	}
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
