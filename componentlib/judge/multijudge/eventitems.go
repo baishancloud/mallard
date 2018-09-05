@@ -27,6 +27,7 @@ type (
 		LeftValue       float64        `json:"left_value,omitempty"`
 		Score           float64        `json:"score,omitempty"`
 		strategy        *models.Strategy
+		timestamp       int64
 	}
 	// ScoreItems is score items group
 	ScoreItems struct {
@@ -62,6 +63,7 @@ type ScoreResult struct {
 	LeftValues map[string]float64
 	Tags       map[string]map[string]string
 	Fields     map[string]map[string]interface{}
+	Times      map[string]int64
 }
 
 // Scan scans the items to generate score result
@@ -70,6 +72,7 @@ func (ei *ScoreItems) Scan() ScoreResult {
 	leftValues := make(map[string]float64)
 	tags := make(map[string]map[string]string)
 	fields := make(map[string]map[string]interface{})
+	times := make(map[string]int64)
 
 	ei.lock.RLock()
 	for _, item := range ei.Items {
@@ -78,11 +81,27 @@ func (ei *ScoreItems) Scan() ScoreResult {
 			leftValues[item.MetricHash] = item.LeftValue
 			tags[item.Metric.Name] = item.Metric.Tags
 			fields[item.Metric.Name] = item.Metric.Fields
+			times[item.MetricHash] = item.timestamp
 		}
 	}
 	ei.lock.RUnlock()
+
+	// get maxTime
+	var maxTime int64
+	for _, t := range times {
+		if t > maxTime {
+			maxTime = t
+		}
+	}
+
+	// get all score
 	var total float64
-	for _, value := range scores {
+	for hash, value := range scores {
+		t := times[hash]
+		if maxTime-t > 600 {
+			scores[hash] = -1
+			continue
+		}
 		total += value
 	}
 	return ScoreResult{
@@ -91,6 +110,7 @@ func (ei *ScoreItems) Scan() ScoreResult {
 		LeftValues: leftValues,
 		Tags:       tags,
 		Fields:     fields,
+		Times:      times,
 	}
 }
 
@@ -234,8 +254,8 @@ func scanItems() []*models.Event {
 				}
 			}
 			if trigger {
-				judgeScoreAlarmCount.Incr(1)
 				event.Status = models.EventProblem
+				judgeScoreAlarmCount.Incr(1)
 			}
 			events = append(events, event)
 			log.Debug("check-event", "status", event.Status, "event", event)

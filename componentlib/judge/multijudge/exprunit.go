@@ -200,6 +200,7 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 			LeftValue:       leftValue,
 			Score:           unit.Score(),
 			strategy:        unit.GetStrategy(),
+			timestamp:       metric.Time,
 		}
 		setEventItem(item)
 		log.Debug("set", "expID", mu.id, "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
