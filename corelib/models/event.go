@@ -159,12 +159,13 @@ func (e *Event) FullTags() map[string]string {
 		fullTags[k] = v
 	}
 	fullTags["endpoint"] = e.Endpoint
-	for k, v := range splitCachegroup(e.Tags["cachegroup"]) {
-		fullTags[k] = v
-	}
-	for k, v := range splitSertypes(e.Tags["sertypes"]) {
-		fullTags[k] = v
-	}
+	/*
+		for k, v := range splitCachegroup(e.Tags["cachegroup"]) {
+			fullTags[k] = v
+		}
+		for k, v := range splitSertypes(e.Tags["sertypes"]) {
+			fullTags[k] = v
+		}*/
 	return fullTags
 }
 

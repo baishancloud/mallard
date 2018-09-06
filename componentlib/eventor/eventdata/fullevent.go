@@ -29,6 +29,11 @@ func Convert(event *models.Event, fillStrategy bool) (*models.EventFull, string,
 		PushedTags:  event.FullTags(),
 		Fields:      event.Fields,
 	}
+	// fill event endpoint sertypes
+	if evt.PushedTags["sertypes"] == "" {
+		evt.PushedTags["sertypes"] = configapi.GetEndpointSertypes(evt.Endpoint)
+		log.Debug("set-endpoint", "eid", event.ID, "endpoint", event.Endpoint, "sertypes", evt.PushedTags["sertypes"])
+	}
 	var err error
 	if fillStrategy {
 		judgeUnitID := event.JudgeUnitID()

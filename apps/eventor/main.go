@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	version    = "2.5.2"
+	version    = "2.5.3"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("eventor")
