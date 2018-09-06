@@ -15,7 +15,7 @@ func TestNetIface(t *testing.T) {
 		So(len(metrics), ShouldBeGreaterThan, 0)
 
 		So(metrics[0].Name, ShouldEqual, netIfaceMetricName)
-		So(metrics[0].Fields, ShouldHaveLength, 27)
+		So(len(metrics[0].Fields), ShouldBeGreaterThanOrEqualTo, 25)
 		So(metrics[0].Tags, ShouldContainKey, "iface")
 
 		fmt.Println(metrics)

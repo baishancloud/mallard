@@ -193,7 +193,7 @@ func updateEventDuration(event *models.EventFull, eventID int64, isPrev bool) {
 			updateEventDuration(event, eventID, true)
 			return
 		}
-		log.Warn("read-old-error", "error", err, "event", event.ID)
+		log.Warn("read-old-error", "error", err, "event", event.ID, "is_prev", isPrev, "table", tableName)
 		alertDbErrorCount.Incr(1)
 		return
 	}

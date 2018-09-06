@@ -18,6 +18,14 @@ func FixFloat(f float64, digit ...int) float64 {
 	return float64(i) / pow
 }
 
+// FixZero returns 0 if lower than 0
+func FixZero(f float64) float64 {
+	if f < 0 {
+		return 0
+	}
+	return f
+}
+
 // ToFloat64 converts interface to float64 value
 func ToFloat64(v interface{}) (float64, error) {
 	if v == nil {

@@ -72,6 +72,11 @@ EOF
         fi
         ./$KEY -vt
 
+        if [ $toType == "exe" ]; then
+            echo "only build binary $KEY"
+            exit 1
+        fi
+
         ver=$(./$KEY -v)
 
         cfgfile="$KEY""-config.json"

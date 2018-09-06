@@ -206,7 +206,7 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 		log.Debug("set", "expID", mu.id, "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
 	} else {
 		if removeEventItem(mu.id, groupHash, metricValueHash) {
-			log.Debug("remove", "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
+			log.Debug("remove", "expID", mu.id, "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
 		}
 	}
 }

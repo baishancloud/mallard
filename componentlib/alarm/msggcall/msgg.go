@@ -159,7 +159,7 @@ func AddRequests(event *models.EventFull, st *models.Strategy, isRecover bool) {
 	stReqs := configapi.AlarmRequestByStrategy(st.ID)
 	if len(stReqs) == 0 {
 		stReqs = make(map[string]*sqldata.AlarmSendRequest, 1)
-		log.Warn("no-reqs", "eid", event.ID)
+		log.Debug("fill-reqs", "eid", event.ID)
 		// fill empty req
 		defaultReq := &sqldata.AlarmSendRequest{
 			Step:     0,
