@@ -29,12 +29,12 @@ func TestEvent(t *testing.T) {
 		So(se.Fields, ShouldHaveLength, 0)
 		So(se.LeftValue, ShouldEqual, 0)
 
-		fullTags := event.FullTags()
+		/*fullTags := event.FullTags()
 		So(fullTags["cachegroup_province"], ShouldEqual, "fujian")
 		So(fullTags["cachegroup_isp"], ShouldEqual, "dx")
 		So(fullTags["cachegroup_city"], ShouldEqual, "xiamen")
 		So(fullTags["sertypes_cache"], ShouldEqual, "1")
-		So(fullTags["sertypes_cache_edge"], ShouldEqual, "1")
+		So(fullTags["sertypes_cache_edge"], ShouldEqual, "1")*/
 
 		Convey("event.full", func() {
 			fullEvent := &EventFull{

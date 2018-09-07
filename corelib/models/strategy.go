@@ -61,6 +61,7 @@ func (s *Strategy) ToSimple() *Strategy {
 			Operator:       s.Operator,
 			RightValue:     s.RightValue,
 			TagString:      s.TagString,
+			NoData:         s.NoData,
 		}
 	}
 	return s.simple

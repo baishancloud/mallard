@@ -13,6 +13,7 @@ import (
 
 	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/baishancloud/mallard/corelib/zaplog"
 )
 
@@ -57,7 +58,8 @@ func SetURLs(rawURLs map[string]string) {
 }
 
 var (
-	sendTimeout = time.Second * 20
+	sendTimeout     = time.Second * 20
+	eventsFixLength = 150
 )
 
 // ProcessQueue handle queues to sender
@@ -88,7 +90,7 @@ func popAndSend(q *queues.Queue, batch int) bool {
 		return false
 	}
 	wg.Add(1)
-	sendValues(packets)
+	go sendValues(packets)
 	eventQueueLengthCount.Set(int64(q.Len()))
 	return true
 }
@@ -120,6 +122,13 @@ func sendOnce(urlKey, url string, data []byte, dataLen int, retry int) {
 		log.Warn("new-req-error", "url", url, "error", err)
 		return
 	}
+	if dataLen < 1 {
+		dataLen = len(data) / eventsFixLength
+		if dataLen < 1 {
+			dataLen = 1
+		}
+	}
+	st := time.Now()
 	request.Header.Add("Content-Type", "application/m-pack")
 	request.Header.Add("Data-Length", strconv.Itoa(dataLen))
 	client := &http.Client{
@@ -146,7 +155,7 @@ func sendOnce(urlKey, url string, data []byte, dataLen int, retry int) {
 		}
 		return
 	}
-	log.Debug("send-ok", "bytes", len(data), "len", dataLen, "to", urlKey)
+	log.Debug("send-ok", "bytes", len(data), "len", dataLen, "to", urlKey, "ms", utils.DurationSinceMS(st))
 }
 
 // Stop stops event sender
