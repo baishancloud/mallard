@@ -24,52 +24,22 @@ func NetIfaceMetrics() ([]*models.Metric, error) {
 		return nil, err
 	}
 	ret := make([]*models.Metric, 0, len(ifacesMap))
-	for _, netIf := range ifacesMap {
-		/*m := &models.Metric{
-			Name:  netIfaceMetricName,
-			Value: float64(netIf.OutBytes),
-			Fields: map[string]interface{}{
-				"inbytes":         netIf.InBytes,
-				"inpackets":       netIf.InPackages,
-				"inerrors":        netIf.InErrors,
-				"indropped":       netIf.InDropped,
-				"infifoerrs":      netIf.InFifoErrs,
-				"outbytes":        netIf.OutBytes,
-				"outpackets":      netIf.OutPackages,
-				"outerrors":       netIf.OutErrors,
-				"outdropped":      netIf.OutDropped,
-				"outfifoerrs":     netIf.OutFifoErrs,
-				"totalbytes":      netIf.TotalBytes,
-				"totalpackets":    netIf.TotalPackages,
-				"totalerrors":     netIf.TotalErrors,
-				"totaldropped":    netIf.TotalDropped,
-				"in_bandwidth":    netIf.InBandwidth,
-				"out_bandwidth":   netIf.OutBandwidth,
-				"total_bandwidth": netIf.TotalBandwidth,
-			},
+	for iface, netIf := range ifacesMap {
+		m2 := &models.Metric{
+			Name:   netIfaceMetricName,
+			Value:  float64(netIf["tx_bytes"] + netIf["rx_bytes"]),
+			Fields: make(map[string]interface{}, len(netIf)),
 			Tags: map[string]string{
-				"iface": netIf.Iface,
+				"iface": iface,
 			},
 		}
-		ret = append(ret, m)*/
-
-		if len(netIf.Packages) > 0 {
-			m2 := &models.Metric{
-				Name:   netIfaceMetricName,
-				Value:  float64(netIf.Packages["tx_bytes"] + netIf.Packages["rx_bytes"]),
-				Fields: make(map[string]interface{}, len(netIf.Packages)),
-				Tags: map[string]string{
-					"iface": netIf.Iface,
-				},
-			}
-			for k, v := range netIf.Packages {
-				m2.Fields[k] = v
-			}
-			m2.Fields["total_bytes"] = m2.Value
-			m2.Fields["total_packets"] = float64(netIf.Packages["tx_packets"] + netIf.Packages["rx_packets"])
-			m2.Fields["total_errors"] = float64(netIf.Packages["tx_errors"] + netIf.Packages["rx_errors"])
-			ret = append(ret, m2)
+		for k, v := range netIf {
+			m2.Fields[k] = v
 		}
+		m2.Fields["total_bytes"] = m2.Value
+		m2.Fields["total_packets"] = float64(netIf["tx_packets"] + netIf["rx_packets"])
+		m2.Fields["total_errors"] = float64(netIf["tx_errors"] + netIf["rx_errors"])
+		ret = append(ret, m2)
 	}
 	return ret, nil
 }

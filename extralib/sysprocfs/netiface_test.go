@@ -19,5 +19,10 @@ func TestNetiface(t *testing.T) {
 		netifaces, err = NetIfaceStats()
 		So(err, ShouldBeNil)
 		fmt.Println(netifaces)
+		if len(netifaces) > 0 {
+			for _, values := range netifaces {
+				So(values, ShouldHaveLength, len(netDevKeys))
+			}
+		}
 	})
 }

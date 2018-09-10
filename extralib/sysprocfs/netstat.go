@@ -19,13 +19,13 @@ import (
 
 // NetStat return TcpExt and IpExt from netstat
 func NetStat() (map[string]map[string]uint64, error) {
-	ret := make(map[string]map[string]uint64)
 	fs, err := os.Open("/proc/net/netstat")
 	if err != nil {
 		return nil, err
 	}
 	defer fs.Close()
 
+	ret := make(map[string]map[string]uint64)
 	reader := bufio.NewReader(fs)
 	for {
 		var bs []byte

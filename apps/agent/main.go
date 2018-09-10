@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	version    = "2.5.4"
+	version    = "2.5.6"
 	configFile = "config.json"
 	cfg        = defaultConfig()
 	log        = zaplog.Zap("agent")

@@ -1,152 +1,119 @@
 package sysprocfs
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"bufio"
+	"io"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/shirou/gopsutil/net"
 )
 
 var (
-	netIfacePackagesFile  = "/sys/class/net/%s/statistics"
-	lastNetIfaceStats     = make(map[string]*NetIfaceStat)
+	// netIfacePackagesFile = "/sys/class/net/%s/statistics"
+	netDevFile = "/proc/net/dev"
+	netDevKeys = map[int]string{
+		0:  "rx_bytes",
+		1:  "rx_packets",
+		2:  "rx_errors",
+		3:  "rx_dropped",
+		4:  "rx_fifo_errors",
+		5:  "rx_frame_errors",
+		6:  "rx_compressed",
+		7:  "multicast",
+		8:  "tx_bytes",
+		9:  "tx_packets",
+		10: "tx_errors",
+		11: "tx_dropped",
+		12: "tx_fifo_errors",
+		13: "collisions",
+		14: "tx_carrier_errors",
+		15: "tx_compressed",
+	}
+	lastNetIfaceStats     = make(map[string]map[string]int64)
 	lastNetIfaceStatsLock sync.RWMutex
 )
 
-// NetIfaceStat is stats for one net interface
-type NetIfaceStat struct {
-	Iface          string           `json:"iface"`
-	InBytes        uint64           `json:"in_bytes"`
-	InPackages     uint64           `json:"in_packages"`
-	InErrors       uint64           `json:"in_errors"`
-	InDropped      uint64           `json:"in_dropped"`
-	InFifoErrs     uint64           `json:"in_fifo_errs"`
-	OutBytes       uint64           `json:"out_bytes"`
-	OutPackages    uint64           `json:"out_packages"`
-	OutErrors      uint64           `json:"out_errors"`
-	OutDropped     uint64           `json:"out_dropped"`
-	OutFifoErrs    uint64           `json:"out_fifo_errs"`
-	TotalBytes     uint64           `json:"total_bytes"`
-	TotalPackages  uint64           `json:"total_packages"`
-	TotalErrors    uint64           `json:"total_errors"`
-	TotalDropped   uint64           `json:"total_dropped"`
-	Time           int64            `json:"time"`
-	InBandwidth    float64          `json:"in_bandwidth"`
-	OutBandwidth   float64          `json:"out_bandwidth"`
-	TotalBandwidth float64          `json:"total_bandwidth"`
-	Packages       map[string]int64 `json:"packages"`
-
-	rawPackages map[string]int64
-}
-
-// String prints memory friendly
-func (n NetIfaceStat) String() string {
-	s, _ := json.Marshal(n)
-	return string(s)
-}
-
-// NetIfaceStats return net interfaces stats
-// if set prefix, it only returns prefixed named net interfaces
-// otherwise, return fall
-func NetIfaceStats() (map[string]*NetIfaceStat, error) {
-	lastNetIfaceStatsLock.Lock()
-	defer lastNetIfaceStatsLock.Unlock()
-
-	ifaceList, err := net.IOCounters(true)
+// NetDevStats returns counter from /proc/net/dev, raw data
+func NetDevStats() (map[string]map[string]int64, error) {
+	fh, err := os.Open(netDevFile)
 	if err != nil {
 		return nil, err
 	}
-	rawMap := make(map[string]net.IOCountersStat)
-	for i := range ifaceList {
-		rawMap[ifaceList[i].Name] = ifaceList[i]
-	}
+	defer fh.Close()
 
-	now := time.Now().Unix()
-	resultMap := make(map[string]*NetIfaceStat, len(rawMap))
-	for k, info := range rawMap {
-		iface := &NetIfaceStat{
-			Iface:         info.Name,
-			InBytes:       info.BytesRecv,
-			OutBytes:      info.BytesSent,
-			InDropped:     info.Dropin,
-			OutDropped:    info.Dropout,
-			InErrors:      info.Errin,
-			OutErrors:     info.Errout,
-			InFifoErrs:    info.Fifoin,
-			OutFifoErrs:   info.Fifoout,
-			InPackages:    info.PacketsRecv,
-			OutPackages:   info.PacketsSent,
-			TotalBytes:    info.BytesRecv + info.BytesSent,
-			TotalDropped:  info.Dropin + info.Dropout,
-			TotalErrors:   info.Errin + info.Errout,
-			TotalPackages: info.PacketsRecv + info.PacketsSent,
-			Time:          now,
-			rawPackages:   netIfacePackages(info.Name),
+	ret := make(map[string]map[string]int64)
+	reader := bufio.NewReader(fh)
+	for {
+		var bs []byte
+		bs, err = readLine(reader)
+		if err == io.EOF {
+			err = nil
+			break
+		} else if err != nil {
+			return nil, err
 		}
-		if iface.TotalBytes < 1 {
+
+		line := string(bs)
+		idx := strings.Index(line, ":")
+		if idx < 0 {
 			continue
 		}
-		last := lastNetIfaceStats[k]
-		if last != nil {
-			// calculate bandwidth
-			totalBytesDiff := iface.TotalBytes - last.TotalBytes
-			deltaTime := float64(iface.Time - last.Time)
-			iface.InBandwidth = float64(iface.InBytes-last.InBytes) / deltaTime
-			iface.OutBandwidth = float64(iface.OutBytes-last.OutBytes) / deltaTime
-			iface.TotalBandwidth = float64(totalBytesDiff) / deltaTime
-
-			// calculate packages
-			if len(iface.rawPackages) > 0 && len(last.rawPackages) > 0 {
-				iface.Packages = make(map[string]int64)
-				for name, value := range iface.rawPackages {
-					value2, ok := last.rawPackages[name]
-					if ok {
-						diff := value - value2
-						if diff < 0 {
-							diff = 0
-						}
-						iface.Packages[name] = diff
-					}
-				}
+		ifaceName := strings.TrimSpace(line[:idx])
+		fields := strings.Fields(line[idx+1:])
+		if len(fields) != 16 {
+			continue
+		}
+		values := make(map[string]int64)
+		for idx, field := range fields {
+			key := netDevKeys[idx]
+			values[key], err = strconv.ParseInt(field, 10, 64)
+			if err != nil {
+				return nil, err
 			}
 		}
-		lastNetIfaceStats[k] = iface
-		resultMap[k] = iface
+		if values["tx_bytes"]+values["rx_bytes"] == 0 {
+			continue
+		}
+		ret[ifaceName] = values
 	}
-	return resultMap, nil
+	return ret, nil
 }
 
-func netIfacePackages(iface string) map[string]int64 {
-	dir := fmt.Sprintf(netIfacePackagesFile, iface)
-	if _, err := os.Stat(dir); err != nil {
-		return nil
+// NetIfaceStats return net interfaces stats
+func NetIfaceStats() (map[string]map[string]int64, error) {
+	lastNetIfaceStatsLock.Lock()
+	defer lastNetIfaceStatsLock.Unlock()
+
+	stats, err := NetDevStats()
+	if err != nil {
+		return nil, err
 	}
-	result := make(map[string]int64, 15)
-	filepath.Walk(dir, func(fpath string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
+
+	ret := make(map[string]map[string]int64)
+	for iface, values := range stats {
+		last := lastNetIfaceStats[iface]
+		if len(last) == 0 {
+			lastNetIfaceStats[iface] = values
+			continue
 		}
-		if info.IsDir() {
-			return nil
-		}
-		raw, _ := ioutil.ReadFile(fpath)
-		if len(raw) > 0 {
-			value, err := strconv.ParseInt(strings.Trim(string(raw), "\n"), 10, 64)
-			if err == nil {
-				basename := filepath.Base(fpath)
-				result[basename] = value
+		results := make(map[string]int64, len(values))
+		for key, value := range values {
+			value2, ok := last[key]
+			if ok {
+				diff := value - value2
+				if diff < 0 {
+					diff = 0
+				}
+				results[key] = diff
 			}
 		}
-		return nil
-	})
-	return result
+		lastNetIfaceStats[iface] = values
+		ret[iface] = results
+	}
+	return ret, nil
 }
 
 // NetInterfaces return netcard interfaces info
