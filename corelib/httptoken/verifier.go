@@ -98,7 +98,7 @@ func refreshVerifyFile(file string) error {
 		if tk.RateLimit == 0 {
 			tk.RateLimit = DefaultRateLimit
 		}
-		rateMap[user] = rate.NewLimiter(rate.Every(time.Second), tk.RateLimit)
+		rateMap[user] = rate.NewLimiter(rate.Limit(tk.RateLimit), tk.RateLimit*2)
 	}
 	log.Debug("refresh-ok", "tokens", tokens)
 	tokeFileModTime = modTime
@@ -133,7 +133,7 @@ func VerifyAndAllow(r *http.Request) (string, string, error) {
 		return "", "", ErrorTokenInvalid
 	}
 	if !VerifyAllowLimit(user) {
-		return "", "", ErrorLimitExceeded
+		return user, token, ErrorLimitExceeded
 	}
 	return user, token, nil
 }

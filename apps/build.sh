@@ -97,7 +97,7 @@ autorestart = true
 user = root
 redirect_stderr = true
 stdout_logfile = /usr/local/mallard/$dir/var/app.log
-stdout_logfile_maxbytes = 1000MB
+stdout_logfile_maxbytes = 500MB
 directory = /usr/local/mallard/$dir/
 EOF
         if [ $toType == "tar.gz" ]; then
