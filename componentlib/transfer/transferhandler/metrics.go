@@ -58,6 +58,9 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	if mQueue != nil {
+		if pack.Len%5 == 0 {
+			pack.Time = time.Now().UnixNano()
+		}
 		dump, ok := mQueue.Push(*pack)
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
@@ -69,9 +72,6 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			log.Info("push-metrics-dump", "count", dump)
 		}
 		storePushQPS.Incr(int64(pack.Len))
-		if pack.Len%5 == 0 {
-			pack.Time = time.Now().UnixNano()
-		}
 	}
 	rw.WriteHeader(204)
 

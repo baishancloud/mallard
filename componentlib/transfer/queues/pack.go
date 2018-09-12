@@ -22,7 +22,7 @@ type (
 		Time int64  `json:"time,omitempty"`
 	}
 	// Packets is list of several packet
-	Packets []Packet
+	Packets []*Packet
 )
 
 // Decode decodes pack to value
@@ -88,7 +88,7 @@ func (ps Packets) DataLen() int {
 
 // PacketsFromReader reads packets from io.Reader
 func PacketsFromReader(reader io.Reader, dataLen int) (Packets, error) {
-	packets := make([]Packet, 0, dataLen)
+	packets := make([]*Packet, 0, dataLen)
 	decoder := json.NewDecoder(reader)
 	return packets, decoder.Decode(&packets)
 }

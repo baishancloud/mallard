@@ -20,7 +20,7 @@ type Queue struct {
 }
 
 // Push pushes raw pack to queue
-func (q *Queue) Push(raw Packet) (int, bool) {
+func (q *Queue) Push(raw *Packet) (int, bool) {
 	if !q.queue.Push(raw) {
 		_, count, err := q.Dump(q.queueSize / 5)
 		if err != nil {
@@ -52,7 +52,7 @@ func (q *Queue) Pop(size int) (Packets, error) {
 	dataLen := int64(len(data))
 	result := make(Packets, 0, dataLen)
 	for _, v := range data {
-		if p, ok := v.(Packet); ok {
+		if p, ok := v.(*Packet); ok {
 			result = append(result, p)
 		}
 	}

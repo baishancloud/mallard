@@ -18,7 +18,7 @@ func TestMetrics(t *testing.T) {
 		queue := NewQueue(10, "dump")
 
 		for i := 0; i < 3; i++ {
-			dumpCount, ok := queue.Push(Packet{
+			dumpCount, ok := queue.Push(&Packet{
 				Data: bytes.Repeat([]byte{
 					byte(i + 1),
 					byte(i + 2),
@@ -36,7 +36,7 @@ func TestMetrics(t *testing.T) {
 		So(packs, ShouldHaveLength, 3)
 		So(packs.DataLen(), ShouldEqual, 27)
 
-		queue.Push(Packet{
+		queue.Push(&Packet{
 			Data: bytes.Repeat([]byte{
 				byte(1),
 				byte(2),
@@ -104,22 +104,22 @@ func genEvent() *models.Event {
 func init() {
 	testMetricsBytes, _ = json.Marshal(testMetrics)
 	testMetricsGzipBytes, _ = utils.GzipBytes(testMetricsBytes)
-	testMetricsPacks = []Packet{
-		Packet{Data: testMetricsBytes},
-		Packet{Data: testMetricsGzipBytes, Type: PacketTypeGzip},
-		Packet{Data: testMetricsBytes},
-		Packet{Data: testMetricsGzipBytes, Type: PacketTypeGzip},
-		Packet{Data: testMetricsBytes},
+	testMetricsPacks = []*Packet{
+		&Packet{Data: testMetricsBytes},
+		&Packet{Data: testMetricsGzipBytes, Type: PacketTypeGzip},
+		&Packet{Data: testMetricsBytes},
+		&Packet{Data: testMetricsGzipBytes, Type: PacketTypeGzip},
+		&Packet{Data: testMetricsBytes},
 	}
 
 	testEventsBytes, _ = json.Marshal(testEvents)
 	testEventsGzipBytes, _ = utils.GzipBytes(testEventsBytes)
-	testEventsPacks = []Packet{
-		Packet{Data: testEventsBytes},
-		Packet{Data: testEventsGzipBytes, Type: PacketTypeGzip},
-		Packet{Data: testEventsBytes},
-		Packet{Data: testEventsGzipBytes, Type: PacketTypeGzip},
-		Packet{Data: testEventsBytes},
+	testEventsPacks = []*Packet{
+		&Packet{Data: testEventsBytes},
+		&Packet{Data: testEventsGzipBytes, Type: PacketTypeGzip},
+		&Packet{Data: testEventsBytes},
+		&Packet{Data: testEventsGzipBytes, Type: PacketTypeGzip},
+		&Packet{Data: testEventsBytes},
 	}
 }
 
@@ -127,8 +127,8 @@ var (
 	testMetricsBytes     []byte
 	testMetricsGzipBytes []byte
 	testMetrics                  = []*models.Metric{genMetric(), genMetric(), genMetric(), genMetric(), genMetric()}
-	testPack                     = Packet{Data: bytes.Repeat([]byte{1, 2, 3}, 100)}
-	testPacks            Packets = []Packet{testPack, testPack, testPack, testPack, testPack}
+	testPack                     = &Packet{Data: bytes.Repeat([]byte{1, 2, 3}, 100)}
+	testPacks            Packets = []*Packet{testPack, testPack, testPack, testPack, testPack}
 	testMetricsPacks     Packets
 
 	testEvents          = []*models.Event{genEvent(), genEvent(), genEvent()}
