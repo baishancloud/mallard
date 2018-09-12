@@ -5,12 +5,14 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/baishancloud/mallard/componentlib/transfer/queues"
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/httptoken"
 	"github.com/baishancloud/mallard/corelib/httputil"
 	"github.com/baishancloud/mallard/corelib/models"
+	"github.com/baishancloud/mallard/corelib/utils"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -20,9 +22,11 @@ var (
 	metricsOpenReqQPS  = expvar.NewQPS("http.metric_open_req")
 	metricsOpenRecvQPS = expvar.NewQPS("http.metric_open_recv")
 
-	metricsRopQPS     = expvar.NewQPS("http.metric_pop")
-	metricsRopZeroQPS = expvar.NewQPS("http.metric_pop_zero")
-	metricsPopDataQPS = expvar.NewQPS("http.metric_pop_data")
+	metricsRopQPS        = expvar.NewQPS("http.metric_pop")
+	metricsRopZeroQPS    = expvar.NewQPS("http.metric_pop_zero")
+	metricsPopDataQPS    = expvar.NewQPS("http.metric_pop_data")
+	metricsPopLatencyAvg = expvar.NewAverage("http.metric_pop_latency", 50)
+	metricsPopWaitAvg    = expvar.NewAverage("http.metric_pop_wait", 50)
 
 	storePushQPS          = expvar.NewQPS("store.push")
 	storePopAvg           = expvar.NewAverage("store.pop_size", 50)
@@ -33,7 +37,7 @@ var (
 
 func init() {
 	expvar.Register(metricsReqQPS, metricsRecvQPS, metricsOpenReqQPS, metricsOpenRecvQPS,
-		metricsPopDataQPS, metricsRopQPS, metricsRopZeroQPS,
+		metricsPopDataQPS, metricsRopQPS, metricsRopZeroQPS, metricsPopLatencyAvg, metricsPopWaitAvg,
 		storePushQPS, storePopFailDiff, storeDropDiff, storeQueueLengthCount, storePopAvg)
 }
 
@@ -65,6 +69,9 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			log.Info("push-metrics-dump", "count", dump)
 		}
 		storePushQPS.Incr(int64(pack.Len))
+		if pack.Len%5 == 0 {
+			pack.Time = time.Now().UnixNano()
+		}
 	}
 	rw.WriteHeader(204)
 
@@ -100,6 +107,7 @@ func metricsPop(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	// pop value
+	now := time.Now()
 	size := getPopSize(r)
 	packets, err := mQueue.Pop(size)
 	if err != nil {
@@ -124,11 +132,24 @@ func metricsPop(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		storePopFailDiff.Incr(1)
 		return
 	}
-	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr)
+	du := utils.DurationSinceMS(now)
+	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr, "ms", du)
 
 	// stats
 	storeQueueLengthCount.Set(int64(mQueue.Len()))
 	metricsPopDataQPS.Incr(int64(packets.DataLen()))
+	metricsPopLatencyAvg.Set(du)
+	var t int64
+	for _, p := range packets {
+		if p.Time > 0 {
+			t = p.Time
+			break
+		}
+	}
+	if t > 0 {
+		diff := now.UnixNano() - t
+		metricsPopWaitAvg.Set(diff)
+	}
 }
 
 func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -138,6 +159,7 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		return
 	}
 	// pop value
+	now := time.Now()
 	size := getPopSize(r)
 	packets, err := mQueue.Pop(size)
 	if err != nil {
@@ -168,11 +190,23 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 		storePopFailDiff.Incr(1)
 		return
 	}
-	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr)
+	du := utils.DurationSinceMS(now)
+	log.Debug("m-pop-ok", "size", len(packets), "bytes", bytesLen, "r", r.RemoteAddr, "ms", du)
 
 	// stats
 	storeQueueLengthCount.Set(int64(mQueue.Len()))
 	metricsPopDataQPS.Incr(int64(packets.DataLen()))
+	var t int64
+	for _, p := range packets {
+		if p.Time > 0 {
+			t = p.Time
+			break
+		}
+	}
+	if t > 0 {
+		diff := now.UnixNano() - t
+		metricsPopWaitAvg.Set(diff)
+	}
 }
 
 func openPing(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {

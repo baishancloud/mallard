@@ -19,6 +19,7 @@ type (
 		Data []byte `json:"data,omitempty"`
 		Type int    `json:"type,omitempty"`
 		Len  int    `json:"len,omitempty"`
+		Time int64  `json:"time,omitempty"`
 	}
 	// Packets is list of several packet
 	Packets []Packet
