@@ -34,7 +34,7 @@ func eventsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		return
 	}
 	if evtQueue != nil {
-		dump, ok := evtQueue.Push(*pack)
+		dump, ok := evtQueue.Push(pack)
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
 			log.Warn("e-recv-error", "err", err, "remote", r.RemoteAddr)

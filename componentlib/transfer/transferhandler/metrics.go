@@ -61,7 +61,7 @@ func metricsRecv(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if pack.Len%5 == 0 {
 			pack.Time = time.Now().UnixNano()
 		}
-		dump, ok := mQueue.Push(*pack)
+		dump, ok := mQueue.Push(pack)
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
 			log.Warn("m-recv-error", "err", err, "remote", r.RemoteAddr)
@@ -239,7 +239,7 @@ func openMetricRecv(rw http.ResponseWriter, r *http.Request, ps httprouter.Param
 		}
 	}
 	if mQueue != nil {
-		dump, ok := mQueue.Push(*pack)
+		dump, ok := mQueue.Push(pack)
 		if !ok {
 			httputil.ResponseFail(rw, r, ErrMetricsPushFail)
 			log.Warn("open-m-recv-error", "err", err, "remote", httputil.RealIP(r))
