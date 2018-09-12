@@ -117,6 +117,7 @@ func LoadJSON(r *http.Request, v interface{}) error {
 
 // ResponseFail responses fial
 func ResponseFail(rw http.ResponseWriter, r *http.Request, err error) {
+	rw.Header().Add("Connection", "close")
 	rw.WriteHeader(500)
 	rw.Write([]byte(err.Error()))
 	log.Warn("500", "u", r.RequestURI, "r", r.RemoteAddr, "error", err)
@@ -133,6 +134,7 @@ func Response404(rw http.ResponseWriter, r *http.Request) {
 
 // Response401 responses 401
 func Response401(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Add("Connection", "close")
 	rw.WriteHeader(401)
 	rw.Write([]byte(http.StatusText(http.StatusUnauthorized)))
 	log.Warn("401", "u", r.RequestURI, "r", r.RemoteAddr)

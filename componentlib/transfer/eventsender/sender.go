@@ -31,10 +31,11 @@ var (
 	eventSendFailCount    = expvar.NewDiff("eventor.send_fail")
 	eventQueueLengthCount = expvar.NewBase("eventor.queue_length")
 	eventSendOnceAvg      = expvar.NewAverage("event.send_avg", 50)
+	eventSendLatencyAvg   = expvar.NewAverage("event.send_latency", 50)
 )
 
 func init() {
-	expvar.Register(eventQueueLengthCount, eventSendEventsCount, eventSendCount, eventSendFailCount, eventSendOnceAvg)
+	expvar.Register(eventQueueLengthCount, eventSendEventsCount, eventSendCount, eventSendFailCount, eventSendOnceAvg, eventSendLatencyAvg)
 }
 
 var (
@@ -155,7 +156,9 @@ func sendOnce(urlKey, url string, data []byte, dataLen int, retry int) {
 		}
 		return
 	}
-	log.Debug("send-ok", "bytes", len(data), "len", dataLen, "to", urlKey, "ms", utils.DurationSinceMS(st))
+	du := utils.DurationSinceMS(st)
+	log.Debug("send-ok", "bytes", len(data), "len", dataLen, "to", urlKey, "ms", du)
+	eventSendLatencyAvg.Set(du)
 }
 
 // Stop stops event sender

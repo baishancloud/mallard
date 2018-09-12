@@ -196,6 +196,7 @@ func metricsPopOld(rw http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	// stats
 	storeQueueLengthCount.Set(int64(mQueue.Len()))
 	metricsPopDataQPS.Incr(int64(packets.DataLen()))
+	metricsPopLatencyAvg.Set(du)
 	var t int64
 	for _, p := range packets {
 		if p.Time > 0 {

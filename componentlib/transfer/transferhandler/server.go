@@ -56,7 +56,7 @@ func buildAuthorized(handler httprouter.Handle, isAuthorized bool) httprouter.Ha
 		return handler
 	}
 	return func(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		if !httptoken.CheckHeaderResponse(rw, r) {
+		if !httptoken.CheckHeader(r.Header) {
 			httputil.Response401(rw, r)
 			return
 		}

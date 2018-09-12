@@ -74,7 +74,7 @@ func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, cus
 	queue := s.dataQueue[hash]
 	historyData := &models.EventValue{Value: rawLeftValue, Time: metric.Time}
 	if len(queue) > 0 {
-		if historyData.Time < queue[0].Time { // accept latest data
+		if historyData.Time <= queue[0].Time { // accept latest data
 			return nil, false
 		}
 	}
