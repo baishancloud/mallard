@@ -52,6 +52,8 @@ install -m 644 %{srcDir}/%{appName}.conf %{buildroot}/etc/supervisor/conf.d/%{ap
 %post
 cp usr/local/mallard/%{destDir}/mallard.logrotate /etc/logrotate.d/mallard
 if [ "`ps aux|grep supervisord|grep -v grep`" != "" ]; then
+	supervisorctl stop %{appName}
+	killall %{appName}
 	supervisorctl update
 	supervisorctl restart %{appName}
 else

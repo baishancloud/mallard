@@ -3,6 +3,7 @@ package sqldata
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/baishancloud/mallard/corelib/expvar"
 	"github.com/baishancloud/mallard/corelib/models"
@@ -139,9 +140,9 @@ func AlarmsForOneStrategy(sid int) map[string]*AlarmSendRequest {
 }
 
 // AlarmTeamBy gets alarm team by name or id
-func AlarmTeamBy(by string, value string) (*models.TeamInfo, []*models.TeamUserStatus) {
+func AlarmTeamBy(by string, value string, withDuty bool) (*models.TeamInfo, []*models.TeamUserStatus, []*models.DutyStatus) {
 	if cachedData == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	var team *models.TeamInfo
 	if by == "name" {
@@ -156,7 +157,7 @@ func AlarmTeamBy(by string, value string) (*models.TeamInfo, []*models.TeamUserS
 		team = cachedData.TeamInfos[idInt]
 	}
 	if team == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	status := cachedData.TeamUsersStatus[team.ID]
 	for _, u := range status {
@@ -166,7 +167,39 @@ func AlarmTeamBy(by string, value string) (*models.TeamInfo, []*models.TeamUserS
 			u.UserNameCN = user.Cnname
 		}
 	}
-	return team, status
+	if !withDuty {
+		return team, status, nil
+
+	}
+	var duUsers []*models.DutyStatus
+	var nowUnix = time.Now().Unix()
+	for _, du := range cachedData.DutyUsersStatus {
+		for _, duUser := range du {
+			if duUser.AlarmTeamID == team.ID {
+				dutyInfo := cachedData.DutyInfos[duUser.DutyID]
+				if dutyInfo == nil || !dutyInfo.IsInTime(nowUnix) {
+					continue
+				}
+				uids := dutyInfo.UserIDList()
+				if len(uids) == 0 {
+					continue
+				}
+				for _, uid := range uids {
+					user := cachedData.UserInfos[uid]
+					if user == nil {
+						continue
+					}
+					du2 := new(models.DutyStatus)
+					*du2 = *duUser
+					du2.UserID = uid
+					du2.UserName = user.Name
+					du2.UserNameCN = user.Cnname
+					duUsers = append(duUsers, du2)
+				}
+			}
+		}
+	}
+	return team, status, duUsers
 }
 
 // StrategiesAll gets all strategies

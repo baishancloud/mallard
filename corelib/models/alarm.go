@@ -1,6 +1,8 @@
 package models
 
 import (
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -116,6 +118,7 @@ type (
 		Step         int    `db:"step" json:"step,omitempty"`
 		UserName     string `db:"-" json:"user_name,omitempty"`
 		UserNameCN   string `db:"-" json:"user_name_cn,omitempty"`
+		UserID       int    `db:"-" json:"user_id,omitempty"`
 	}
 )
 
@@ -131,6 +134,22 @@ func (duty *DutyInfo) IsInTime(t int64) bool {
 		return now >= t1 && now <= t2
 	}
 	return !(now >= t2 && now <= t1)
+}
+
+// UserIDList returns user id int slice in duty info
+func (duty *DutyInfo) UserIDList() []int {
+	ids := strings.Split(duty.UserIDs, ",")
+	if len(ids) == 0 {
+		return nil
+	}
+	var idList []int
+	for _, idStr := range ids {
+		id, _ := strconv.Atoi(idStr)
+		if id > 0 {
+			idList = append(idList, id)
+		}
+	}
+	return idList
 }
 
 // AlarmAction is action binding to template to alarm users
