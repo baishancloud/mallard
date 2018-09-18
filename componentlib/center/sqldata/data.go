@@ -169,7 +169,6 @@ func AlarmTeamBy(by string, value string, withDuty bool) (*models.TeamInfo, []*m
 	}
 	if !withDuty {
 		return team, status, nil
-
 	}
 	var duUsers []*models.DutyStatus
 	var nowUnix = time.Now().Unix()

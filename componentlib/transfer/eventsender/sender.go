@@ -113,7 +113,7 @@ func sendValues(packets queues.Packets) {
 	defer urlsLock.RUnlock()
 
 	for key, url := range urls {
-		sendOnce(key, url, data, dataLen, 2)
+		sendOnce(key, url, data, dataLen, 3)
 	}
 }
 

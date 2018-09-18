@@ -141,8 +141,7 @@ func alarmsTeam(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		httputil.Response404(rw, r)
 		return
 	}
-	withDuty := (r.FormValue("duty") != "")
-	team, status, dutys := sqldata.AlarmTeamBy("name", teamName, withDuty)
+	team, status, dutys := sqldata.AlarmTeamBy("name", teamName, true)
 	if team == nil {
 		httputil.Response404(rw, r)
 		return
@@ -152,5 +151,5 @@ func alarmsTeam(rw http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		"users": status,
 		"duty":  dutys,
 	}, false, false)
-	log.Debug("req-alarm-team", "r", r.RemoteAddr, "team", team, "with_duty", withDuty)
+	log.Debug("req-alarm-team", "r", r.RemoteAddr, "team", team)
 }
