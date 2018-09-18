@@ -44,7 +44,7 @@ func prepare() {
 func main() {
 	prepare()
 
-	serverinfo.Scan(cfg.Endpoint, cfg.UseAllConf)
+	serverinfo.Scan(cfg.Endpoint, cfg.UseAllConf, time.Second*time.Duration(cfg.Collector.ServinfoInterval))
 
 	metricsQueue := make(chan []*models.Metric, 1e3)
 	eventsQueue := make(chan []*models.Event, 1e3)

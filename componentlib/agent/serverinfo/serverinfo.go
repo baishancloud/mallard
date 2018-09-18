@@ -39,11 +39,11 @@ var (
 )
 
 // Scan starts scanning serverinfo
-func Scan(defaultEp string, useAllConf bool) {
+func Scan(defaultEp string, useAllConf bool, duration time.Duration) {
 	Read(defaultEp, useAllConf)
 	log.Info("read", "info", svrData, "use_allconf", useAllConf, "default-ep", defaultEp)
 
-	go utils.TickerThen(time.Minute, func() {
+	go utils.TickerThen(duration, func() {
 		Read(defaultEp, useAllConf)
 		log.Info("read", "info", svrData, "use_allconf", useAllConf, "default-ep", defaultEp)
 	})

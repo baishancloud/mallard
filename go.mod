@@ -7,12 +7,12 @@ require (
 	github.com/go-redis/redis v6.14.1+incompatible
 	github.com/go-sql-driver/mysql v0.0.0-20180719071942-99ff426eb706
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
-	github.com/influxdata/influxdb v1.6.2
+	github.com/influxdata/influxdb v1.6.3
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/julienschmidt/httprouter v0.0.0-20180715161854-348b672cd90d
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/kr/pty v1.1.2 // indirect
+	github.com/kr/pty v1.1.3 // indirect
 	github.com/lib/pq v1.0.0 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
 	github.com/onsi/gomega v1.4.2 // indirect

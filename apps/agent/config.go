@@ -10,8 +10,9 @@ import (
 
 type (
 	collector struct {
-		Interval int    `json:"interval"`
-		Prefix   string `json:"prefix"`
+		Interval         int    `json:"interval"`
+		Prefix           string `json:"prefix"`
+		ServinfoInterval int    `json:"servinfo_interval"`
 	}
 	transferConfig struct {
 		URLs           []string            `json:"urls"`
@@ -90,8 +91,9 @@ func defaultConfig() *config {
 			ConfigInterval: 30,
 		},
 		Collector: collector{
-			Interval: 60,
-			Prefix:   "sys",
+			Interval:         60,
+			Prefix:           "sys",
+			ServinfoInterval: 300,
 		},
 		Plugin: plugin{
 			Dir:    "./plugins",
@@ -99,7 +101,7 @@ func defaultConfig() *config {
 			Reload: 30,
 		},
 		Logutil: logopt{
-			ReadInterval: 5,
+			ReadInterval: 10,
 			ReadDir:      "./datalogs",
 			WriteFile:    "./var/metrics_%s.json",
 			CleanDays:    4,
