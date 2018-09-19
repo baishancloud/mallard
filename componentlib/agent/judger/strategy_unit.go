@@ -64,7 +64,7 @@ var (
 	QueueDataExpiry int64 = 3600 * 3
 )
 
-func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, customHash string) ([]*models.EventValue, bool) {
+func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, customHash string, allowTimeEqual bool) ([]*models.EventValue, bool) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	hash := customHash
@@ -74,12 +74,20 @@ func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, cus
 	queue := s.dataQueue[hash]
 	historyData := &models.EventValue{Value: rawLeftValue, Time: metric.Time}
 	if len(queue) > 0 {
-		if historyData.Time <= queue[0].Time { // accept latest data
-			return nil, false
+		if allowTimeEqual {
+			if historyData.Time < queue[0].Time { // accept latest data
+				log.Info("queue-append-old-eq", "metric", metric.Name, "hash", hash, "now", historyData.Time, "queue", queue[0].Time)
+				return nil, false
+			}
+		} else {
+			if historyData.Time <= queue[0].Time { // accept latest data
+				log.Info("queue-append-old", "metric", metric.Name, "hash", hash, "now", historyData.Time, "queue", queue[0].Time)
+				return nil, false
+			}
 		}
 	}
 	if len(queue) > 0 && historyData.Time-queue[0].Time > QueueDataExpiry {
-		log.Info("queue-expired", "metric", metric.Name, "hash", metric.Hash())
+		log.Info("queue-expired", "metric", metric.Name, "hash", hash)
 		queue = []*models.EventValue{historyData}
 	} else {
 		queue = append([]*models.EventValue{historyData}, queue...)
@@ -94,8 +102,9 @@ func (s *StrategyUnit) genQueue(metric *models.Metric, rawLeftValue float64, cus
 }
 
 // Check check metric value to bool result, if problem, return false
-func (s *StrategyUnit) Check(metric *models.Metric, customHash string) (float64, models.EventStatus, error) {
+func (s *StrategyUnit) Check(metric *models.Metric, customHash string, allowTimeEqual bool) (float64, models.EventStatus, error) {
 	if s.st == nil {
+		fmt.Println("---nilstrategy")
 		return 0, models.EventIgnore, nil
 	}
 	rawLeftValue, err := s.op.Transform(metric)
@@ -105,8 +114,9 @@ func (s *StrategyUnit) Check(metric *models.Metric, customHash string) (float64,
 		}
 		return 0, models.EventIgnore, err
 	}
-	queue, ok := s.genQueue(metric, rawLeftValue, customHash)
+	queue, ok := s.genQueue(metric, rawLeftValue, customHash, allowTimeEqual)
 	if !ok {
+		fmt.Println("---queuen-not-ok")
 		return 0, models.EventIgnore, nil
 	}
 	leftValue, ok, err := s.op.Trigger(queue)

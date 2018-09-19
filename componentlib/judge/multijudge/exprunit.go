@@ -183,9 +183,12 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 	}
 	groupHash = strings.TrimRight(groupHash, "-")
 	// groupHash = fmt.Sprintf("%d~%s", mu.id, groupHash)
-	leftValue, status, err := unit.Check(metric, groupHash)
+	leftValue, status, err := unit.Check(metric, groupHash, true)
 	if err != nil {
 		log.Warn("check-error", "metric", metric.Name, "id", mu.id, "err", err)
+		return
+	}
+	if status == models.EventIgnore {
 		return
 	}
 	metricHash := fmt.Sprintf("%s~%s", groupHash, metric.Name)

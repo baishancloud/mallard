@@ -81,6 +81,10 @@ func (ei *ScoreItems) Scan() ScoreResult {
 			leftValues[item.MetricHash] = item.LeftValue
 			tags[item.Metric.Name] = item.Metric.Tags
 			fields[item.Metric.Name] = item.Metric.Fields
+			if len(fields[item.Metric.Name]) == 0 {
+				fields[item.Metric.Name] = make(map[string]interface{})
+			}
+			fields[item.Metric.Name]["value"] = item.Metric.Value
 			times[item.MetricHash] = item.timestamp
 		}
 	}
