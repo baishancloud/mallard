@@ -139,6 +139,22 @@ func (eg *ScoreGroup) Add(item *ScoreItem) {
 	items.Add(item)
 }
 
+// ExistItem checks if some item exist in the item
+func (eg *ScoreGroup) ExistItem(groupHash string) bool {
+	eg.lock.RLock()
+	items := eg.Groups[groupHash]
+	eg.lock.RUnlock()
+	if items == nil {
+		return false
+	}
+	for _, item := range items.Items {
+		if item.Score > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // Remove removes item by hash in group
 func (eg *ScoreGroup) Remove(groupHash, metricValueHash string) bool {
 	eg.lock.RLock()
@@ -187,6 +203,16 @@ func setEventItem(item *ScoreItem) {
 	}
 	group.Add(item)
 	judgeHitCount.Incr(1)
+}
+
+func checkEventItemHappens(mid int, groupHash string) bool {
+	cachedEventsLock.RLock()
+	group := cachedEvents[mid]
+	cachedEventsLock.RUnlock()
+	if group != nil {
+		return false
+	}
+	return group.ExistItem(groupHash)
 }
 
 func removeEventItem(mid int, groupHash, metricValueHash string) bool {
@@ -283,7 +309,7 @@ func ScanForEvents(interval time.Duration) {
 		if hash != expHash {
 			expHash = hash
 			SetExpressions(exprList)
-			log.Info("reload-expressions", "expr", len(exprList))
+			log.Info("reload-expressions", "expr", len(exprList), "hash", expHash)
 		}
 		go func() {
 			events := scanItems()

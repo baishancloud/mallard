@@ -47,7 +47,7 @@ func defaultConfig() config {
 		HTTPAddr: "0.0.0.0:10988",
 		Center: center{
 			Addr:     "http://127.0.0.1:10999",
-			Interval: 30,
+			Interval: 60,
 		},
 		PerfFile: "performance.json",
 		Debug:    true,

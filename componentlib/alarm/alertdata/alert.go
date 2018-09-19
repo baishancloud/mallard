@@ -127,7 +127,7 @@ func InsertEvent(event *models.EventFull) {
 		st.Func,
 		st.Operator,
 		st.RightValue,
-		st.Note,
+		note,
 		st.MaxStep,
 		st.Priority,
 		event.Status,
@@ -330,7 +330,7 @@ func EventTableName(t int64) string {
 
 // EventPrevTableName generates prev events db
 func EventPrevTableName(t int64) string {
-	tt := time.Unix(t-3600*24*7, 0)
+	tt := time.Unix(t-3600*24*7-3600, 0)
 	y, m, d := getWeekNumber(tt)
 	return fmt.Sprintf("event%04d%02d%02d", y, m, d)
 }

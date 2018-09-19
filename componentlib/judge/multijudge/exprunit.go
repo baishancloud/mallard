@@ -203,10 +203,26 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 			timestamp:       metric.Time,
 		}
 		setEventItem(item)
-		log.Debug("set", "expID", mu.id, "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
+		log.Debug("set-problem-item", "expr", mu.id, "group", groupHash, "vhash", metricValueHash, "left", leftValue)
 	} else {
-		if removeEventItem(mu.id, groupHash, metricValueHash) {
-			log.Debug("remove", "expID", mu.id, "mhash", metricHash, "vhash", metricValueHash, "left", leftValue)
+		if checkEventItemHappens(mu.id, groupHash) {
+			item := &ScoreItem{
+				Metric:          metric,
+				MultiStrategyID: mu.id,
+				GroupHash:       groupHash,
+				MetricHash:      metricHash,
+				MetricValueHash: metricValueHash,
+				LeftValue:       leftValue,
+				Score:           0,
+				strategy:        unit.GetStrategy(),
+				timestamp:       metric.Time,
+			}
+			setEventItem(item)
+			log.Debug("set-ok-item", "expr", mu.id, "group", groupHash, "vhash", metricValueHash, "left", leftValue)
+		} else {
+			if removeEventItem(mu.id, groupHash, metricValueHash) {
+				log.Debug("remove-item", "expr", mu.id, "group", groupHash, "vhash", metricValueHash, "left", leftValue)
+			}
 		}
 	}
 }
