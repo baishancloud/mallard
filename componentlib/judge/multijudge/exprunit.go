@@ -189,7 +189,7 @@ func (mu *ExprUnit) Check(key string, metric *models.Metric) {
 		return
 	}
 	metricHash := fmt.Sprintf("%s~%s", groupHash, metric.Name)
-	metricValueHash := metric.Name + "~" + metric.Hash()
+	metricValueHash := metric.TagString(true)
 	if status == models.EventProblem {
 		item := &ScoreItem{
 			Metric:          metric,
