@@ -125,6 +125,9 @@ type (
 // Add adds item to group
 func (eg *ScoreGroup) Add(item *ScoreItem) {
 	eg.lock.RLock()
+	if len(eg.Groups) == 0 {
+		eg.Groups = make(map[string]*ScoreItems)
+	}
 	items := eg.Groups[item.GroupHash]
 	eg.lock.RUnlock()
 	if items == nil {
