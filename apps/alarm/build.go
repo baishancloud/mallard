@@ -2,5 +2,5 @@ package main
 
 const (
     // BuildTime is auto generated build time
-    BuildTime = "2018-09-19T16:01:31+0800"
+    BuildTime = "2018-09-20T16:23:17+0800"
 )

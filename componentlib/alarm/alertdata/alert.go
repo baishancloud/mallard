@@ -121,6 +121,13 @@ func InsertEvent(event *models.EventFull) {
 		log.Warn("substr-note", "eid", event.ID, "note", st.Note, "to", note)
 	}
 
+	var stID, expID int
+	if strings.HasPrefix(event.ID, "e_") {
+		expID = st.ID
+	} else {
+		stID = st.ID
+	}
+
 	result, err := stmt.Exec(
 		event.ID,
 		st.FieldTransform,
@@ -137,8 +144,8 @@ func InsertEvent(event *models.EventFull) {
 		event.EventTime,
 		event.Judge,
 		string(tags),
-		0,
-		st.ID,
+		expID,
+		stID,
 		st.TemplateID,
 		time.Now().Unix(),
 	)

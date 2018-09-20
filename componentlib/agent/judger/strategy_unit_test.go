@@ -116,7 +116,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     1,
 				Value:    2,
 				Endpoint: "localhost",
-			}, "")
+			}, "", false)
 			So(err, ShouldBeNil)
 			So(leftValue, ShouldEqual, 0)
 			So(status, ShouldEqual, models.EventIgnore)
@@ -126,7 +126,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     2,
 				Value:    2,
 				Endpoint: "localhost",
-			}, "")
+			}, "", false)
 			So(err, ShouldBeNil)
 			So(leftValue, ShouldEqual, 2)
 			So(status, ShouldEqual, models.EventProblem)
@@ -136,7 +136,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     3,
 				Value:    -1,
 				Endpoint: "localhost",
-			}, "")
+			}, "", false)
 			So(err, ShouldBeNil)
 			So(leftValue, ShouldEqual, -1)
 			So(status, ShouldEqual, models.EventOk)
@@ -197,7 +197,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     4,
 				Value:    2,
 				Endpoint: "localhost",
-			}, "")
+			}, "", false)
 			So(err, ShouldNotBeNil)
 			So(err, ShouldHaveSameTypeAs, FieldMissingError{})
 			So(leftValue, ShouldEqual, 0)
@@ -221,7 +221,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     4,
 				Value:    2,
 				Endpoint: "new-localhost",
-			}, "hash-2")
+			}, "hash-2", false)
 			So(err, ShouldBeNil)
 			So(status, ShouldEqual, models.EventIgnore)
 			So(unit.dataQueue["hash-2"], ShouldHaveLength, 1)
@@ -232,7 +232,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     14,
 				Value:    2,
 				Endpoint: "new-localhost",
-			}, "hash-2")
+			}, "hash-2", false)
 			So(err, ShouldBeNil)
 			So(status, ShouldEqual, models.EventProblem)
 			So(unit.dataQueue["hash-2"], ShouldHaveLength, 2)
@@ -242,7 +242,7 @@ func TestStrategyUnit(t *testing.T) {
 				Time:     14 + QueueDataExpiry + 10,
 				Value:    2,
 				Endpoint: "new-localhost",
-			}, "hash-2")
+			}, "hash-2", false)
 			So(err, ShouldBeNil)
 			So(unit.dataQueue["hash-2"], ShouldHaveLength, 1)
 			So(status, ShouldEqual, models.EventIgnore)
